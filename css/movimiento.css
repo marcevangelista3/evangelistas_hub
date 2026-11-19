@@ -1,0 +1,62 @@
+/* =========================================================
+   MOVIMIENTO: entradas progresivas, transiciones de sección,
+   apertura de paneles. Con "Movimiento reducido" se desactiva.
+   ========================================================= */
+
+:root { --curva: cubic-bezier(.2, .8, .2, 1); --rebote: cubic-bezier(.34, 1.4, .64, 1); }
+
+@keyframes entrar {
+  from { opacity: 0; transform: translateY(18px) scale(.98); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+@keyframes crecer { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes brillo { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@keyframes aparecer { from { opacity: 0; } to { opacity: 1; } }
+@keyframes subir-hoja { from { opacity: 0; transform: translateX(24px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes subir-hoja-movil { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes caer { from { opacity: 0; transform: translateY(-12px) scale(.97); } to { opacity: 1; transform: none; } }
+
+/* Cabecera de la página y tarjetas entran escalonadas */
+.animar .antetitulo, .animar .titulo-pagina, .animar .subnav { animation: entrar .6s var(--curva) both; }
+.animar .titulo-pagina { animation-delay: 50ms; }
+.animar .subnav { animation-delay: 100ms; }
+
+.tarjeta { animation: entrar .7s var(--curva) both; animation-delay: calc(120ms + var(--i, 0) * 70ms); }
+
+/* Las barras se dibujan poco a poco, y luego un brillo las recorre */
+.esqueleto span { transform-origin: left; animation: crecer .9s var(--curva) both; animation-delay: calc(350ms + var(--i, 0) * 70ms); }
+.esqueleto span:nth-child(2) { animation-delay: calc(430ms + var(--i, 0) * 70ms); }
+.esqueleto span:nth-child(3) { animation-delay: calc(510ms + var(--i, 0) * 70ms); }
+.esqueleto span::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, var(--brillo), transparent);
+  animation: brillo 2.2s ease-in-out infinite; animation-delay: calc(1.2s + var(--i, 0) * 120ms);
+}
+.progreso > i { animation: crecer 1.1s var(--curva) both; animation-delay: calc(300ms + var(--i, 0) * 80ms); }
+
+/* Piezas de la cabecera al cargar */
+.marca, .acciones > *, .secciones .pieza { animation: caer .6s var(--curva) both; }
+.secciones .pieza:nth-child(1) { animation-delay: 40ms; }
+.secciones .pieza:nth-child(2) { animation-delay: 80ms; }
+.secciones .pieza:nth-child(3) { animation-delay: 120ms; }
+.secciones .pieza:nth-child(4) { animation-delay: 160ms; }
+.secciones .pieza:nth-child(5) { animation-delay: 200ms; }
+
+/* Paneles */
+dialog[open]::backdrop { animation: aparecer .3s ease both; }
+.hoja[open] { animation: subir-hoja .45s var(--curva) both; }
+.buscador-panel[open] { animation: caer .35s var(--curva) both; }
+@media (max-width: 720px) {
+  .hoja[open] { animation: subir-hoja-movil .45s var(--curva) both; }
+}
+
+.tab svg, .nav-enlace svg { transition: transform .35s var(--rebote); }
+.tab.activo svg, .nav-enlace.activo svg { transform: scale(1.12); }
+
+/* Movimiento reducido (por ajuste o por el sistema) */
+[data-movimiento="reducido"] *, [data-movimiento="reducido"] *::before, [data-movimiento="reducido"] *::after {
+  animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

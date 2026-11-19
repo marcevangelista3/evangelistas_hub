@@ -1,0 +1,116 @@
+/* =========================================================
+   TEMA: colores, cristal y tipografía.
+   El acento y el cristal los calcula js/ajustes.js a partir del
+   color que elija el usuario (variables --acento*, --cristal...).
+   ========================================================= */
+
+:root {
+  --bg: #f4f2f8;
+  --texto: #232131;
+  --suave: #6c6880;
+  --tenue: #9a96ab;
+  --linea: rgba(120, 110, 160, 0.14);
+
+  /* Cristal (alfa y desenfoque los ajusta el usuario) */
+  --cristal-rgb: 255, 255, 255;
+  --cristal-alfa: 0.55;
+  --cristal: rgba(var(--cristal-rgb), var(--cristal-alfa));
+  --cristal-fuerte: rgba(var(--cristal-rgb), calc(var(--cristal-alfa) + 0.2));
+  --cristal-borde: rgba(255, 255, 255, 0.75);
+  --cristal-sombra: 0 10px 34px rgba(76, 64, 120, 0.10);
+  --desenfoque: 24px;
+  --brillo: rgba(255, 255, 255, 0.55);
+
+  /* Acento (valores por defecto: lavanda) */
+  --acento: hsl(256 70% 92%);
+  --acento-f: hsl(256 40% 38%);
+  --acento-m: hsl(256 60% 72%);
+
+  /* Pasteles fijos para iconos de sección */
+  --lavanda: #e3dcfa;  --lavanda-f: #5b4a9e;
+  --menta: #d3f1e2;    --menta-f: #2f7a58;
+  --melocoton: #fde2d1; --melocoton-f: #a2552a;
+  --cielo: #d6e8f9;    --cielo-f: #2f6497;
+  --rosa: #f9dce7;     --rosa-f: #9c3d63;
+  --limon: #f6efc8;    --limon-f: #7c6a17;
+
+  --radio-l: 26px;
+  --radio-m: 20px;
+  --radio-s: 14px;
+
+  /* Tipografía: títulos y cuerpo de la misma familia visual */
+  --f-titulo: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --f-cuerpo: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --escala: 1;
+
+  color-scheme: light;
+}
+
+[data-fuente="apple"] {
+  --f-titulo: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  --f-cuerpo: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+}
+[data-fuente="redondeada"] {
+  --f-titulo: "Nunito", system-ui, sans-serif;
+  --f-cuerpo: "Nunito", system-ui, sans-serif;
+}
+
+[data-modo="oscuro"] {
+  --bg: #16151d;
+  --texto: #f1eff8;
+  --suave: #aaa6bb;
+  --tenue: #7d798f;
+  --linea: rgba(255, 255, 255, 0.08);
+  --cristal-rgb: 40, 38, 54;
+  --cristal-borde: rgba(255, 255, 255, 0.09);
+  --cristal-sombra: 0 10px 34px rgba(0, 0, 0, 0.35);
+  --brillo: rgba(255, 255, 255, 0.08);
+  --lavanda: #3b3554; --lavanda-f: #cfc4f7;
+  --menta: #2c4439;   --menta-f: #b4e6cc;
+  --melocoton: #4a372f; --melocoton-f: #f6c9ad;
+  --cielo: #2c3d52;   --cielo-f: #b9d6f3;
+  --rosa: #4a3140;    --rosa-f: #f3bfd3;
+  --limon: #45402a;   --limon-f: #eee0a0;
+  color-scheme: dark;
+}
+
+[data-texto="grande"] { --escala: 1.1; }
+
+/* ---------- Superficie de cristal ---------- */
+.cristal {
+  background: var(--cristal);
+  border: 1px solid var(--cristal-borde);
+  box-shadow: var(--cristal-sombra);
+  -webkit-backdrop-filter: blur(var(--desenfoque)) saturate(160%);
+  backdrop-filter: blur(var(--desenfoque)) saturate(160%);
+}
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; }
+html { font-size: calc(16px * var(--escala)); }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--texto);
+  font-family: var(--f-cuerpo);
+  line-height: 1.45;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+h1, h2, h3, h4 { font-family: var(--f-titulo); letter-spacing: -0.015em; margin: 0; font-weight: 700; }
+kbd { font-family: var(--f-cuerpo); font-size: 0.72rem; padding: 2px 6px; border-radius: 6px; background: var(--linea); color: var(--suave); }
+svg { display: block; }
+[hidden] { display: none !important; }
+
+/* ---------- Fondos ---------- */
+.fondo-animado, .fondo-foto { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; }
+.fondo-foto { display: none; background-size: cover; background-position: center; }
+[data-fondo="foto"] .fondo-foto { display: block; }
+[data-fondo="foto"] .fondo-animado, [data-fondo="liso"] .fondo-animado { display: none; }
+
+@media (prefers-reduced-transparency: reduce) {
+  .cristal { background: var(--cristal-fuerte); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>EVANGELISTA'S HUB</title>
+  <meta name="description" content="Hub personal: inicio, calendario, fitness y finanzas.">
+  <meta name="theme-color" content="#f4f2f8">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="HUB">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/tema.css">
+  <link rel="stylesheet" href="css/estructura.css">
+  <link rel="stylesheet" href="css/paneles.css">
+  <link rel="stylesheet" href="css/graficos.css">
+  <link rel="stylesheet" href="css/movimiento.css">
+</head>
+<body>
+  <!-- Fondo: animado (canvas), foto o liso -->
+  <canvas id="fondo" class="fondo-animado" aria-hidden="true"></canvas>
+  <div id="fondo-foto" class="fondo-foto" aria-hidden="true"></div>
+
+  <!-- Cabecera en piezas sueltas -->
+  <header class="cabecera">
+    <a class="pieza marca cristal" href="#inicio" aria-label="Ir al inicio">
+      <span class="marca-logo" aria-hidden="true">E</span>
+      <span class="marca-nombre">EVANGELISTA'S <b>HUB</b></span>
+    </a>
+    <nav class="secciones" id="nav-principal" aria-label="Secciones"></nav>
+    <div class="acciones">
+      <button class="pieza buscador cristal" id="abrir-buscar" type="button" aria-label="Buscar">
+        <span data-icono="buscar"></span><span class="buscador-texto">Buscar</span><kbd>⌘K</kbd>
+      </button>
+      <button class="pieza redonda cristal" id="abrir-notis" type="button" aria-label="Notificaciones">
+        <span data-icono="campana"></span><span class="insignia" id="insignia" hidden></span>
+      </button>
+      <button class="pieza redonda cristal" id="abrir-ia" type="button" aria-label="Preguntar a Claude">
+        <span data-icono="chispa"></span>
+      </button>
+      <button class="pieza redonda cristal solo-escritorio" id="abrir-ajustes" type="button" aria-label="Personalizar">
+        <span data-icono="ajustes"></span>
+      </button>
+      <button class="pieza perfil cristal" id="abrir-perfil" type="button" aria-label="Perfil">
+        <span class="avatar" id="avatar-cabecera"></span><span class="perfil-nombre" id="nombre-cabecera"></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="contenido">
+    <div class="cabecera-pagina" id="cabecera-pagina">
+      <p class="antetitulo" id="antetitulo"></p>
+      <div class="fila-titulo">
+        <h1 class="titulo-pagina" id="titulo-pagina"></h1>
+        <div class="acciones-pagina" id="acciones-pagina"></div>
+      </div>
+      <nav class="subnav" id="subnav" aria-label="Subapartados"></nav>
+    </div>
+    <div class="vista" id="vista"></div>
+  </main>
+
+  <!-- Barra inferior (iPhone) -->
+  <nav class="tabbar cristal" id="tabbar" aria-label="Secciones"></nav>
+
+  <!-- Paneles -->
+  <dialog class="hoja cristal" id="panel-ajustes" aria-labelledby="t-ajustes">
+    <div class="hoja-cabecera"><h2 id="t-ajustes">Personalizar</h2><button class="cerrar" data-cerrar aria-label="Cerrar"></button></div>
+    <div class="hoja-cuerpo" id="ajustes-cuerpo"></div>
+  </dialog>
+
+  <dialog class="hoja cristal" id="panel-perfil" aria-labelledby="t-perfil">
+    <div class="hoja-cabecera"><h2 id="t-perfil">Perfil</h2><button class="cerrar" data-cerrar aria-label="Cerrar"></button></div>
+    <div class="hoja-cuerpo" id="perfil-cuerpo"></div>
+  </dialog>
+
+  <dialog class="hoja cristal" id="panel-notis" aria-labelledby="t-notis">
+    <div class="hoja-cabecera"><h2 id="t-notis">Notificaciones</h2><button class="cerrar" data-cerrar aria-label="Cerrar"></button></div>
+    <div class="hoja-cuerpo" id="notis-cuerpo"></div>
+  </dialog>
+
+  <dialog class="hoja cristal hoja-ia" id="panel-ia" aria-labelledby="t-ia">
+    <div class="hoja-cabecera"><h2 id="t-ia">Preguntar a Claude</h2><button class="cerrar" data-cerrar aria-label="Cerrar"></button></div>
+    <div class="hoja-cuerpo" id="ia-cuerpo"></div>
+  </dialog>
+
+  <dialog class="buscador-panel cristal" id="panel-buscar" aria-label="Buscar">
+    <div class="buscador-campo"><span data-icono="buscar"></span><input id="buscar-input" type="search" placeholder="Buscar secciones, ajustes…" autocomplete="off"><kbd>esc</kbd></div>
+    <ul class="buscador-resultados" id="buscar-resultados" role="listbox"></ul>
+  </dialog>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
