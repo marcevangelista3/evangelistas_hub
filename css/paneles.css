@@ -106,3 +106,6 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 
 .burbuja.yo { align-self: flex-end; border-bottom-right-radius: 6px; background: color-mix(in srgb, var(--acento-m) 35%, var(--cristal)); }
 .burbuja.escribiendo { opacity: .6; }
 .chat { overflow-y: auto; }
+.form-cuenta { display: flex; flex-direction: column; gap: 8px; }
+.form-cuenta .botones { display: flex; gap: 8px; }
+.form-cuenta .botones .boton { flex: 1; justify-content: center; }

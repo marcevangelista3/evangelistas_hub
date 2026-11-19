@@ -5,7 +5,7 @@
    ========================================================= */
 import { icono } from './iconos.js';
 import { reducirImagen, elegirImagen } from './imagenes.js';
-import { usuarioActual, entrarConGoogle, entrarConCorreo, verificarCodigo, salir, sincronizar, ultimaSync } from './nube.js';
+import { usuarioActual, entrarConClave, crearCuenta, salir, sincronizar, ultimaSync } from './nube.js';
 
 const CLAVE = 'hub:perfil';
 let perfil = cargar();
@@ -83,35 +83,31 @@ function seccionCuenta() {
   return `
     <section class="grupo">
       <p class="grupo-titulo">Cuenta</p>
-      <div class="botones">
-        <button type="button" class="boton ancho" id="entrar-google">${icono('google')} Continuar con Google</button>
-      </div>
-      <form class="fila-correo" id="form-correo">
-        <input class="campo" type="email" name="correo" placeholder="o recibe un enlace en tu correo" required autocomplete="email">
-        <button type="submit" class="boton">Enviar</button>
+      <form class="form-cuenta" id="form-cuenta">
+        <input class="campo" type="email" name="correo" placeholder="Correo" required autocomplete="email">
+        <input class="campo" type="password" name="clave" placeholder="Contraseña (mínimo 6 caracteres)" required minlength="6" autocomplete="current-password">
+        <div class="botones"><button type="submit" class="boton primario" value="entrar">Entrar</button><button type="submit" class="boton" value="crear">Crear cuenta</button></div>
       </form>
-      <p class="nota" id="nota-cuenta">Sirve para tener los mismos datos en el Mac y en el iPhone. Gratis.</p>
+      <p class="nota" id="nota-cuenta">Usa el mismo correo y contraseña en el Mac y en el iPhone para tener los mismos datos. Gratis.</p>
     </section>`;
 }
 
 function conectarCuenta(el, repintar) {
   const nota = el.querySelector('#nota-cuenta');
   const fallo = (e) => { if (nota) nota.textContent = 'No se ha podido: ' + (e.message || e); };
-  el.querySelector('#entrar-google')?.addEventListener('click', () => entrarConGoogle().catch(fallo));
-  el.querySelector('#form-correo')?.addEventListener('submit', async (e) => {
+  el.querySelector('#form-cuenta')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const correo = e.target.correo.value.trim();
+    const correo = e.target.correo.value.trim(), clave = e.target.clave.value;
+    const crear = e.submitter?.value === 'crear';
     try {
-      await entrarConCorreo(correo);
-      e.target.outerHTML = `<form class="fila-correo" id="form-codigo"><input class="campo" name="codigo" inputmode="numeric" autocomplete="one-time-code" placeholder="Código de 6 dígitos" required maxlength="10"><button type="submit" class="boton primario">Entrar</button></form>`;
-      nota.textContent = `Te he enviado un correo a ${correo}. Escribe aquí el código o abre el enlace en este dispositivo.`;
-      el.querySelector('#form-codigo').addEventListener('submit', async (ev) => {
-        ev.preventDefault();
-        try { await verificarCodigo(correo, ev.target.codigo.value.trim()); repintar(); }
-        catch (err) { fallo(err); }
-      });
+      if (crear) {
+        const conSesion = await crearCuenta(correo, clave);
+        if (!conSesion) { nota.textContent = `Cuenta creada. Abre el correo que te ha llegado a ${correo} para confirmarla (da igual en qué navegador) y luego pulsa Entrar aquí.`; return; }
+      } else await entrarConClave(correo, clave);
+      repintar();
+    } catch (err) {
+      fallo(/invalid login/i.test(err.message) ? new Error('correo o contraseña incorrectos.') : /not confirmed/i.test(err.message) ? new Error('falta confirmar la cuenta desde el correo que te llegó.') : err);
     }
-    catch (err) { fallo(err); }
   });
   el.querySelector('#sync-ahora')?.addEventListener('click', async () => { await sincronizar(); repintar(); });
   el.querySelector('#cerrar-sesion')?.addEventListener('click', async () => { await salir(); repintar(); });

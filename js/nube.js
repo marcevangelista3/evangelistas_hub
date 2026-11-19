@@ -96,6 +96,20 @@ export async function verificarCodigo(correo, codigo) {
   if (error) throw error;
 }
 
+/** Correo y contraseña: funciona igual en la app instalada del iPhone */
+export async function entrarConClave(correo, clave) {
+  const sb = await obtenerCliente();
+  const { error } = await sb.auth.signInWithPassword({ email: correo, password: clave });
+  if (error) throw error;
+}
+/** Devuelve true si ya hay sesión (sin confirmación por correo) */
+export async function crearCuenta(correo, clave) {
+  const sb = await obtenerCliente();
+  const { data, error } = await sb.auth.signUp({ email: correo, password: clave, options: { emailRedirectTo: volver() } });
+  if (error) throw error;
+  return !!data.session;
+}
+
 export async function salir() {
   const sb = await obtenerCliente();
   await sb.auth.signOut();
