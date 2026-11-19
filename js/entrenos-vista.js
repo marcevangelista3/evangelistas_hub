@@ -3,10 +3,8 @@
    ========================================================= */
 import { tarjeta, rejilla, esc } from './ui.js';
 import { icono } from './iconos.js';
-import { modoDemo } from './ajustes.js';
 import { barras } from './graficos.js';
 import * as E from './entrenos.js';
-import { fitness as X } from './demo.js';
 
 const kg = (v) => (Math.round(v * 10) / 10).toLocaleString('es-ES');
 const fDia = new Intl.DateTimeFormat('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -220,7 +218,6 @@ export function abrirEditor(id, alGuardar) {
 /* ---------- Pestaña Ejercicios ---------- */
 function htmlMarcas() {
   const m = Object.entries(E.marcas()).sort((a, b) => b[1].kg - a[1].kg).slice(0, 6);
-  if (!m.length && modoDemo()) return barras(X.marcas.kg, X.marcas.nombres, { destacar: 2, color: 'var(--lavanda-f)', sufijo: ' kg' });
   if (!m.length) return '<p class="cifra-sub">Aparecerán cuando termines tu primer entreno.</p>';
   const max = Math.max(...m.map(([, v]) => v.kg));
   return barras(m.map(([, v]) => v.kg), m.map(([n]) => n.length > 12 ? n.slice(0, 11) + '…' : n), { destacar: m.findIndex(([, v]) => v.kg === max), color: 'var(--lavanda-f)', sufijo: ' kg' });

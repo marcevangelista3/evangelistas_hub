@@ -1,9 +1,9 @@
 /* =========================================================
    NUTRICIÓN
-   Base de alimentos (valores medios aproximados por 100 g) y
-   cálculo de macros de cada comida a partir de los gramos.
+   Base de alimentos (valores medios aproximados por 100 g),
+   alimentos propios y comidas guardadas por día.
    ========================================================= */
-import { modoDemo } from './ajustes.js';
+import { iso } from './registro.js';
 
 // kcal, proteína, carbohidratos, grasas por 100 g
 export const ALIMENTOS = {
@@ -18,6 +18,7 @@ export const ALIMENTOS = {
   'Huevo': [155, 13, 1.1, 11],
   'Claras de huevo': [52, 10.9, 0.7, 0.2],
   'Pan integral': [247, 13, 41, 3.4],
+  'Pan blanco': [265, 9, 49, 3.2],
   'Arroz blanco cocido': [130, 2.7, 28, 0.3],
   'Pasta cocida': [158, 5.8, 31, 0.9],
   'Patata cocida': [87, 1.9, 20, 0.1],
@@ -25,6 +26,7 @@ export const ALIMENTOS = {
   'Garbanzos cocidos': [164, 8.9, 27.4, 2.6],
   'Pechuga de pollo a la plancha': [165, 31, 0, 3.6],
   'Pavo en lonchas': [104, 21, 1.5, 1.5],
+  'Jamón serrano': [241, 31, 0, 13],
   'Ternera magra': [217, 26, 0, 12],
   'Salmón': [208, 20, 0, 13],
   'Atún al natural': [116, 26, 0, 1],
@@ -41,27 +43,58 @@ export const ALIMENTOS = {
   'Chocolate negro 85 %': [600, 10, 20, 50],
 };
 
-const DEMO = [
-  { nombre: 'Desayuno', hora: '08:10', items: [['Avena', 80], ['Plátano', 120], ['Proteína whey', 30]] },
-  { nombre: 'Comida', hora: '14:45', items: [['Arroz blanco cocido', 250], ['Pechuga de pollo a la plancha', 180], ['Brócoli', 150], ['Aceite de oliva', 10]] },
-  { nombre: 'Merienda', hora: '17:30', items: [['Yogur griego natural', 125], ['Nueces', 20]] },
-  { nombre: 'Cena', hora: '', items: [] },
-];
-const VACIO = DEMO.map((c) => ({ ...c, hora: '', items: [] }));
-
-const CLAVE = () => (modoDemo() ? 'hub:comidas-demo' : 'hub:comidas');
-export function cargarComidas() {
-  try { const c = JSON.parse(localStorage.getItem(CLAVE())); if (c) return c; } catch {}
-  return structuredClone(modoDemo() ? DEMO : VACIO);
+/* ---------- Alimentos propios (los que añades tú o Elena) ---------- */
+const K_PROPIOS = 'hub:alimentos';
+let crudo = null, propiosCache = {};
+function propios() {
+  let raw = null; try { raw = localStorage.getItem(K_PROPIOS); } catch {}
+  if (raw !== crudo) { crudo = raw; try { propiosCache = JSON.parse(raw) || {}; } catch { propiosCache = {}; } }
+  return propiosCache;
 }
-export function guardarComidas(c) { try { localStorage.setItem(CLAVE(), JSON.stringify(c)); } catch {} }
+export const alimentos = () => ({ ...ALIMENTOS, ...propios() });
+export function buscarAlimento(nombre) {
+  const n = nombre.trim().toLowerCase();
+  return Object.keys(alimentos()).find((a) => a.toLowerCase() === n) || null;
+}
+export function anadirAlimento(nombre, porCien) {
+  const l = { ...propios(), [nombre.trim()]: porCien.map((v) => Math.round((+v || 0) * 10) / 10) };
+  try { localStorage.setItem(K_PROPIOS, JSON.stringify(l)); } catch {}
+  return nombre.trim();
+}
+
+/* ---------- Comidas por día: { 'AAAA-MM-DD': [comidas] } ---------- */
+const CLAVE = 'hub:dieta';
+const vacio = () => ['Desayuno', 'Comida', 'Merienda', 'Cena'].map((nombre) => ({ nombre, hora: '', items: [] }));
+function todo() {
+  try { const d = JSON.parse(localStorage.getItem(CLAVE)); if (d) return d; } catch {}
+  // Formato antiguo (un solo día sin fecha): se pasa a hoy
+  const d = {};
+  try { const v = JSON.parse(localStorage.getItem('hub:comidas')); if (v?.some((c) => c.items?.length)) d[iso()] = v; } catch {}
+  return d;
+}
+export const cargarComidas = (fecha = iso()) => structuredClone(todo()[fecha] || vacio());
+export function guardarComidas(c, fecha = iso()) {
+  const d = todo();
+  if (c.some((x) => x.items.length)) d[fecha] = c; else delete d[fecha];
+  try { localStorage.setItem(CLAVE, JSON.stringify(d)); } catch {}
+}
+/** Añade un alimento a una comida (por nombre: Desayuno, Comida, Merienda, Cena) */
+export function anadirAComida(comida, nombre, gramos, fecha = iso()) {
+  const c = cargarComidas(fecha);
+  const i = Math.max(0, c.findIndex((x) => x.nombre.toLowerCase() === String(comida).toLowerCase()));
+  c[i].items.push([nombre, Math.round(gramos)]);
+  if (!c[i].hora && fecha === iso()) c[i].hora = new Date().toTimeString().slice(0, 5);
+  guardarComidas(c, fecha);
+}
 
 /** Macros de un alimento según sus gramos */
 export function macrosItem([nombre, g]) {
-  const v = ALIMENTOS[nombre] || [0, 0, 0, 0];
+  const v = alimentos()[nombre] || [0, 0, 0, 0];
   const k = g / 100;
   return { kcal: v[0] * k, p: v[1] * k, c: v[2] * k, g: v[3] * k };
 }
 const sumar = (lista) => lista.reduce((a, m) => ({ kcal: a.kcal + m.kcal, p: a.p + m.p, c: a.c + m.c, g: a.g + m.g }), { kcal: 0, p: 0, c: 0, g: 0 });
 export const macrosComida = (comida) => sumar(comida.items.map(macrosItem));
 export const totalesDia = (comidas = cargarComidas()) => sumar(comidas.map(macrosComida));
+/** Totales de cada día con algo apuntado */
+export const totalesPorDia = () => Object.fromEntries(Object.entries(todo()).map(([f, c]) => [f, totalesDia(c)]));

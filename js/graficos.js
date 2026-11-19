@@ -83,6 +83,7 @@ export function activarCarruseles(raiz) {
 
 /** Línea con área degradada */
 export function linea(valores, etiquetas, { color = 'var(--acento-f)', id = 'l' + Math.random().toString(36).slice(2, 7), dec = 1, sufijo = '' } = {}) {
+  if (valores.length === 1) { valores = [valores[0], valores[0]]; etiquetas = ['', ...etiquetas]; }
   const W = 300, H = 110, pad = 8;
   const min = Math.min(...valores), max = Math.max(...valores), r = max - min || 1;
   const pts = valores.map((v, i) => [pad + (i * (W - pad * 2)) / (valores.length - 1), pad + (1 - (v - min) / r) * (H - pad * 2)]);

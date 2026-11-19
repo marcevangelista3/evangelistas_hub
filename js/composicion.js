@@ -13,6 +13,7 @@ export const FISICO_DEMO = { sexo: 'hombre', edad: 20, altura: 178, cuello: 38, 
 export function cargarFisico() {
   try { return { ...FISICO_DEMO, ...JSON.parse(localStorage.getItem(CLAVE)) }; } catch { return { ...FISICO_DEMO }; }
 }
+export const tieneFisico = () => { try { return !!localStorage.getItem(CLAVE); } catch { return false; } };
 export function guardarFisico(f) { try { localStorage.setItem(CLAVE, JSON.stringify(f)); } catch {} }
 
 /** % de grasa corporal (Marina de EE. UU.), medidas en cm */

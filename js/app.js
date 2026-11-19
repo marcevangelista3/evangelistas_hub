@@ -5,7 +5,7 @@
 import { iniciarNube, alCambiarCuenta } from './nube.js';
 import { SECCIONES, buscarSeccion } from './secciones.js';
 import { icono, pintarIconos } from './iconos.js';
-import { aplicar, pintarPanel, modoDemo } from './ajustes.js';
+import { aplicar, pintarPanel } from './ajustes.js';
 import { animarNumeros } from './graficos.js';
 import { pintarAvatares, pintarPanelPerfil, alCambiarPerfil } from './perfil.js';
 import { prepararBuscador, pintarNotificaciones, pintarIA } from './paneles.js';
@@ -69,7 +69,7 @@ async function navegar() {
   document.querySelectorAll('[data-seccion]').forEach((a) => a.classList.toggle('activo', a.dataset.seccion === seccion.id));
 
   const varios = seccion.subapartados.length > 1;
-  $('antetitulo').innerHTML = (varios ? seccion.nombre : fechaDeHoy()) + (modoDemo() ? '<span class="marca-demo">Datos de ejemplo</span>' : '');
+  $('antetitulo').innerHTML = (varios ? seccion.nombre : fechaDeHoy());
   $('titulo-pagina').textContent = varios ? sub.nombre : seccion.nombre;
   $('acciones-pagina').innerHTML = '';
   document.title = `${seccion.nombre} · EVANGELISTA'S HUB`;

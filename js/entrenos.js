@@ -19,24 +19,16 @@ export const EJERCICIOS = [
   'Extensión de cuádriceps', 'Curl femoral', 'Gemelo de pie', 'Abdominales en polea', 'Plancha',
 ];
 
-const s = (kg, reps, n) => Array.from({ length: n }, () => ({ kg, reps }));
-const ej = (nombre, series, descanso = 90) => ({ id: nuevoId(), nombre, descanso, series });
-const EJEMPLO = () => [
-  { id: nuevoId(), nombre: 'Empuje', color: 'var(--rosa-f)', ejercicios: [
-    ej('Press de banca plano', s(62.5, 12, 3), 120), ej('Press con mancuernas', s(24, 10, 3)), ej('Press militar', s(40, 10, 3)),
-    ej('Elevaciones laterales', s(10, 15, 3), 60), ej('Extensión de tríceps en polea', s(25, 12, 3), 60)] },
-  { id: nuevoId(), nombre: 'Tirón', color: 'var(--cielo-f)', ejercicios: [
-    ej('Dominadas', s(0, 8, 4), 120), ej('Remo con barra', s(60, 10, 3)), ej('Jalón al pecho', s(55, 12, 3)),
-    ej('Face pull', s(20, 15, 3), 60), ej('Curl con barra', s(30, 10, 3), 60)] },
-  { id: nuevoId(), nombre: 'Pierna', color: 'var(--menta-f)', ejercicios: [
-    ej('Sentadilla', s(90, 8, 4), 150), ej('Prensa', s(180, 12, 4)), ej('Peso muerto rumano', s(80, 10, 3)),
-    ej('Extensión de cuádriceps', s(45, 15, 3), 60), ej('Gemelo de pie', s(60, 15, 4), 60)] },
-];
+// Firma de las rutinas de ejemplo que venían de serie: si siguen sin tocar, se quitan
+const FIRMA_EJEMPLO = 'Empuje:Press de banca plano,Press con mancuernas,Press militar,Elevaciones laterales,Extensión de tríceps en polea|Tirón:Dominadas,Remo con barra,Jalón al pecho,Face pull,Curl con barra|Pierna:Sentadilla,Prensa,Peso muerto rumano,Extensión de cuádriceps,Gemelo de pie';
+const KG_EJEMPLO = '62.5,24,40,10,25,0,60,55,20,30,90,180,80,45,60';
+const firma = (r) => r.map((x) => `${x.nombre}:${x.ejercicios.map((e) => e.nombre).join(',')}`).join('|');
+const kgs = (r) => r.flatMap((x) => x.ejercicios.map((e) => e.series[0]?.kg)).join(',');
 
 /* ---------- Rutinas ---------- */
 export function rutinas() {
-  let r = leer(K.rutinas, null);
-  if (!r) { r = EJEMPLO(); escribir(K.rutinas, r); }
+  const r = leer(K.rutinas, []);
+  if (r.length === 3 && firma(r) === FIRMA_EJEMPLO && kgs(r) === KG_EJEMPLO) { escribir(K.rutinas, []); return []; }
   return r;
 }
 export const rutina = (id) => rutinas().find((r) => r.id === id);
@@ -109,3 +101,37 @@ export function terminar() {
 }
 export const descartar = () => guardarSesion(null);
 export const volumen = (ses) => ses.ejercicios.reduce((a, e) => a + e.series.reduce((b, x) => b + (x.kg || 0) * (x.reps || 0), 0), 0);
+
+/** Apunta un entreno ya hecho (lo usa Elena) */
+export function registrarEntreno({ nombre, minutos = 60, fecha = hoyISO(), ejercicios = [] }) {
+  const r = rutinas().find((x) => x.nombre.toLowerCase() === String(nombre).toLowerCase());
+  const reg = { id: nuevoId(), fecha, rutinaId: r?.id || null, nombre: r?.nombre || nombre, minutos: Math.max(1, Math.round(minutos)),
+    ejercicios: ejercicios.map((e) => ({ nombre: e.nombre, series: (e.series || []).map((x) => ({ kg: +x.kg || 0, reps: +x.reps || 0 })) })) };
+  escribir(K.historial, [reg, ...historial()].sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 500));
+  if (fecha === hoyISO() && r) elegirHoy(r.id);
+  return reg;
+}
+
+/* ---------- Estadísticas ---------- */
+/** Minutos entrenados por día { 'AAAA-MM-DD': minutos } */
+export function minutosPorDia() {
+  const m = {};
+  for (const s of historial()) m[s.fecha] = (m[s.fecha] || 0) + (s.minutos || 0);
+  return m;
+}
+/** Días seguidos entrenando (cuenta desde hoy, o desde ayer si hoy aún no) y la mejor racha */
+export function rachas() {
+  const dias = new Set(historial().map((s) => s.fecha));
+  const d = new Date();
+  if (!dias.has(hoyISO(d))) d.setDate(d.getDate() - 1);
+  let actual = 0;
+  while (dias.has(hoyISO(d))) { actual++; d.setDate(d.getDate() - 1); }
+  const orden = [...dias].sort();
+  let mejor = 0, seguidos = 0, prev = null;
+  for (const f of orden) {
+    const [a, m, x] = f.split('-').map(Number), t = new Date(a, m - 1, x);
+    seguidos = prev && (t - prev) / 864e5 < 1.5 ? seguidos + 1 : 1;
+    mejor = Math.max(mejor, seguidos); prev = t;
+  }
+  return { actual, mejor };
+}

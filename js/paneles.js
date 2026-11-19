@@ -16,7 +16,7 @@ function indice(acciones) {
   items.push({ titulo: 'Personalizar aspecto', detalle: 'Ajustes', accion: acciones.ajustes, icono: 'ajustes', color: 'lavanda' });
   items.push({ titulo: 'Perfil', detalle: 'Cuenta', accion: acciones.perfil, icono: 'usuario', color: 'rosa' });
   items.push({ titulo: 'Notificaciones', detalle: 'Avisos', accion: acciones.notis, icono: 'campana', color: 'limon' });
-  items.push({ titulo: 'Preguntar a Claude', detalle: 'IA', accion: acciones.ia, icono: 'chispa', color: 'cielo' });
+  items.push({ titulo: 'Hablar con Elena', detalle: 'Asistente', accion: acciones.ia, icono: 'chispa', color: 'cielo' });
   return items;
 }
 
@@ -72,63 +72,90 @@ export async function pintarNotificaciones() {
     : `<div class="vacio">${icono('campana')}<p>No tienes notificaciones.</p><p class="nota">Aquí aparecerán los recordatorios del calendario, avisos de gastos y emails importantes.</p></div>`;
 }
 
-/* ---------- IA ---------- */
+/* ---------- Elena (Gemini gratis a través de Supabase) ---------- */
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const conversacion = []; // { rol: 'usuario' | 'ia', texto, acciones?, estado? }
+const SUGERENCIAS = ['Recuérdame que el viernes entrego la práctica', 'He desayunado avena con plátano', 'Hoy he entrenado pierna una hora', '¿Cuánto llevo gastado este mes?'];
+let escuchando = null;
 
-/* ---------- Asistente (Gemini gratis a través de Supabase) ---------- */
-const conversacion = [];
-
-async function contextoApp() {
-  const partes = [`Hoy es ${new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}.`];
-  try {
-    const F = await import('./finanzas-datos.js');
-    const r = F.resumenMes(F.MESES.length - 1);
-    partes.push(`Finanzas de ${F.MESES_LARGOS.at(-1)}${F.esDemo ? ' (datos de ejemplo)' : ''}: ingresos ${r.ingresos.toFixed(2)} €, gastos ${r.gastos.toFixed(2)} €. Por categoría: ${r.categorias.map((c) => `${c.nombre} ${c.valor} €`).join(', ')}.`);
-    partes.push('Gastos por mes: ' + F.MESES.map((m, i) => `${m} ${Math.round(F.resumenMes(i).gastos)} €`).join(', ') + '.');
-  } catch {}
-  try {
-    const N = await import('./nutricion.js');
-    const t = N.totalesDia();
-    partes.push(`Dieta de hoy: ${Math.round(t.kcal)} kcal, proteína ${Math.round(t.p)} g, carbohidratos ${Math.round(t.c)} g, grasas ${Math.round(t.g)} g.`);
-  } catch {}
-  return partes.join('\n');
+function htmlMensaje(m, i, E) {
+  if (m.rol === 'usuario') return `<div class="burbuja yo">${esc(m.texto)}</div>`;
+  const acciones = m.acciones?.length ? `<div class="elena-acciones ${m.estado || 'pendiente'}" data-msg="${i}">
+      <ul>${m.acciones.map((a) => { const d = E.describir(a); return `<li><span class="tarjeta-icono c-lavanda">${icono(d.icono)}</span><div><strong>${esc(d.texto)}</strong><small>${esc(d.detalle)}</small></div></li>`; }).join('')}</ul>
+      ${m.estado === 'aplicado' ? '<p class="aviso-ok">Apuntado.</p>' : m.estado === 'descartado' ? '<p class="nota">Descartado.</p>'
+        : '<div class="botones"><button class="boton primario" data-aplicar>Apuntar</button><button class="boton" data-descartar>Descartar</button></div>'}
+    </div>` : '';
+  return `${m.texto ? `<div class="burbuja claude">${esc(m.texto).replace(/\n/g, '<br>')}</div>` : ''}${acciones}`;
 }
 
 export async function pintarIA() {
   const { usuarioActual, obtenerCliente } = await import('./nube.js');
+  const E = await import('./elena.js');
   const conectado = !!usuarioActual();
   const el = document.getElementById('ia-cuerpo');
-  const burbujas = () => conversacion.map((m) => `<div class="burbuja ${m.rol === 'usuario' ? 'yo' : 'claude'}">${esc(m.texto).replace(/\n/g, '<br>')}</div>`).join('');
+  const voz = window.SpeechRecognition || window.webkitSpeechRecognition;
   el.innerHTML = `
     <div class="chat">
-      <div class="burbuja claude">${conectado ? 'Pregúntame lo que quieras sobre tus gastos, tu dieta o tu día. Uso el plan gratuito de Gemini, de Google.' : 'Inicia sesión en Perfil para usar el asistente. Es gratuito (Gemini, de Google).'}</div>
-      ${burbujas()}
+      <div class="burbuja claude">${conectado ? 'Hola, soy Elena. Cuéntame tu día: lo que has comido, si has entrenado, qué tienes que entregar… y lo apunto donde toca. También puedes preguntarme por tus datos.' : 'Hola, soy Elena. Inicia sesión en Perfil para hablar conmigo.'}</div>
+      ${conversacion.map((m, i) => htmlMensaje(m, i, E)).join('')}
+      ${conectado && !conversacion.length ? `<div class="chips elena-sugerencias">${SUGERENCIAS.map((t) => `<button type="button" class="chip-opcion" data-sugerencia>${esc(t)}</button>`).join('')}</div>` : ''}
     </div>
     <form class="chat-entrada">
-      <input placeholder="Pregunta lo que quieras…" ${conectado ? '' : 'disabled'} aria-label="Pregunta" name="q" autocomplete="off">
+      ${voz ? `<button type="button" class="boton boton-icono ${escuchando ? 'escuchando' : ''}" data-voz ${conectado ? '' : 'disabled'} aria-label="Hablar">${icono('micro')}</button>` : ''}
+      <input placeholder="Escribe o dicta a Elena…" ${conectado ? '' : 'disabled'} aria-label="Mensaje" name="q" autocomplete="off">
       <button class="boton primario" ${conectado ? '' : 'disabled'} aria-label="Enviar">${icono('enviar')}</button>
     </form>`;
   const chat = el.querySelector('.chat');
+  const form = el.querySelector('form');
   chat.scrollTop = chat.scrollHeight;
-  el.querySelector('form').onsubmit = async (e) => {
+
+  el.querySelectorAll('[data-sugerencia]').forEach((b) => b.onclick = () => { form.q.value = b.textContent; form.q.focus(); });
+
+  // Confirmar o descartar lo que propone Elena
+  el.querySelectorAll('.elena-acciones').forEach((caja) => {
+    const m = conversacion[+caja.dataset.msg];
+    caja.querySelector('[data-aplicar]')?.addEventListener('click', async (ev) => {
+      ev.target.disabled = true;
+      try { for (const a of m.acciones) await E.aplicar(a); m.estado = 'aplicado'; }
+      catch (err) { m.estado = 'pendiente'; alertar(caja, err); return; }
+      pintarIA(); dispatchEvent(new Event('hub:recargar'));
+    });
+    caja.querySelector('[data-descartar]')?.addEventListener('click', () => { m.estado = 'descartado'; pintarIA(); });
+  });
+
+  // Dictado por voz (el del propio navegador, gratis)
+  el.querySelector('[data-voz]')?.addEventListener('click', () => {
+    if (escuchando) { escuchando.stop(); return; }
+    const rec = new voz(); rec.lang = 'es-ES'; rec.interimResults = true; rec.continuous = false;
+    escuchando = rec; el.querySelector('[data-voz]').classList.add('escuchando');
+    rec.onresult = (e) => { form.q.value = [...e.results].map((r) => r[0].transcript).join(''); if (e.results[e.results.length - 1].isFinal) { rec.stop(); form.requestSubmit(); } };
+    rec.onend = rec.onerror = () => { escuchando = null; el.querySelector('[data-voz]')?.classList.remove('escuchando'); };
+    rec.start();
+  });
+
+  form.onsubmit = async (e) => {
     e.preventDefault();
-    const q = e.target.q.value.trim(); if (!q) return;
+    const q = form.q.value.trim(); if (!q) return;
     conversacion.push({ rol: 'usuario', texto: q });
-    e.target.q.value = '';
+    form.q.value = '';
+    el.querySelector('.elena-sugerencias')?.remove();
     chat.insertAdjacentHTML('beforeend', `<div class="burbuja yo">${esc(q)}</div><div class="burbuja claude escribiendo">…</div>`);
     chat.scrollTop = chat.scrollHeight;
-    let texto;
+    let resp;
     try {
       const sb = await obtenerCliente();
-      const { data, error } = await sb.functions.invoke('ia', { body: { mensajes: conversacion, contexto: await contextoApp() } });
+      const historial = conversacion.map((m) => ({ rol: m.rol, texto: m.texto || (m.acciones || []).map((a) => E.describir(a).texto).join('; ') })).filter((m) => m.texto);
+      const { data, error } = await sb.functions.invoke('ia', { body: { mensajes: historial, contexto: await E.contexto() } });
       if (error) {
         const det = await error.context?.json?.().catch(() => null);
-        texto = det?.error === 'falta_clave' ? 'Falta activar la clave gratuita de Gemini en la nube.'
-          : det?.error === 'limite' ? 'Se ha alcanzado el límite gratuito por minuto. Prueba otra vez en un momento.'
-          : 'No he podido responder ahora mismo.';
-      } else texto = data.texto || 'Sin respuesta.';
-    } catch { texto = 'No hay conexión.'; }
-    conversacion.push({ rol: 'ia', texto });
+        resp = { texto: det?.error === 'falta_clave' ? 'Aún falta activar la clave gratuita de Gemini en Supabase. En cuanto la pongas, ya puedo ayudarte.'
+          : det?.error === 'limite' ? 'He llegado al límite gratuito de este minuto. Prueba otra vez en un momento.'
+          : 'No he podido responder ahora mismo.' };
+      } else resp = { texto: data.texto || '', acciones: data.acciones || [] };
+    } catch { resp = { texto: 'No hay conexión.' }; }
+    if (!resp.texto && !resp.acciones?.length) resp.texto = 'No te he entendido, ¿me lo repites?';
+    conversacion.push({ rol: 'ia', ...resp, estado: resp.acciones?.length ? 'pendiente' : undefined });
     pintarIA();
   };
 }
+function alertar(caja, err) { caja.insertAdjacentHTML('beforeend', `<p class="nota">No se ha podido guardar: ${esc(err.message || err)}</p>`); }

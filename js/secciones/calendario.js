@@ -7,10 +7,9 @@
    ========================================================= */
 import { tarjeta, rejilla, esc } from '../ui.js';
 import { icono } from '../iconos.js';
-import { modoDemo } from '../ajustes.js';
 import { mes, contador, animarNumeros } from '../graficos.js';
 import { datos } from '../datos.js';
-import { TIPOS, eventosCalendario } from '../demo.js';
+import { TIPOS } from '../tipos.js';
 
 const H_INI = 7, H_FIN = 24, ALTO = 48;
 const COLORES = ['cielo', 'lavanda', 'menta', 'melocoton', 'rosa', 'limon'];
@@ -30,9 +29,7 @@ let el, eventos = [];
 
 async function cargarEventos() {
   const propios = await datos.listar('eventos');
-  const ocultos = new Set((await datos.listar('eventos-ocultos')).map((o) => o.ref));
-  const demo = modoDemo() ? eventosCalendario().filter((e) => !ocultos.has(e.id) && !propios.some((p) => p.ref === e.id)) : [];
-  eventos = [...demo, ...propios.map((p) => ({ ...p, id: p.ref || p.id, _propio: p.id }))];
+  eventos = propios.map((p) => ({ ...p, id: p.ref || p.id, _propio: p.id }));
 }
 
 export async function render(sub, contenedor) {
@@ -113,7 +110,7 @@ function vistaHoras([a]) {
   const cols = dias.length;
   const cab = dias.map((d) => `<div class="${iso(d) === hoy ? 'hoy' : ''}" data-dia="${iso(d)}">${fmt({ weekday: 'short' }).format(d)}<b>${d.getDate()}</b></div>`).join('');
   const todoDia = dias.map((d) => `<div class="cal-todo-dia">${eventos.filter((e) => e.fecha === iso(d) && e.todoElDia).map((e) =>
-    `<span class="pildora c-${e.color}" data-ev="${e.id}">${e.importancia === 'alta' ? '● ' : ''}${esc(e.titulo)}</span>`).join('')}</div>`).join('');
+    `<span class="pildora c-${e.color} ${e.hecha ? 'hecha' : ''}" data-ev="${e.id}">${e.hecha ? '✓ ' : e.importancia === 'alta' ? '● ' : ''}${esc(e.titulo)}</span>`).join('')}</div>`).join('');
 
   let j = 0;
   const columnas = dias.map((d) => {
@@ -229,6 +226,7 @@ function abrirEditor(ev = {}) {
   f.todoElDia.onchange = () => { dlg.querySelector('.horas-ev').hidden = f.todoElDia.checked; };
   dlg.querySelectorAll('[data-tipo]').forEach((b) => b.onclick = () => {
     e.tipo = b.dataset.tipo; e.color = TIPOS[e.tipo].color;
+    if (nuevo && e.tipo === 'recordatorio' && !f.todoElDia.checked) { f.todoElDia.checked = true; f.todoElDia.onchange(); }
     dlg.querySelectorAll('[data-tipo]').forEach((x) => x.classList.toggle('activo', x === b));
     dlg.querySelectorAll('[data-color]').forEach((x) => x.classList.toggle('activo', x.dataset.color === e.color));
   });
@@ -254,7 +252,6 @@ function abrirEditor(ev = {}) {
   };
   dlg.querySelector('#borrar-ev')?.addEventListener('click', async () => {
     if (e._propio) await datos.borrar('eventos', e._propio);
-    if (!e._propio || e.id !== e._propio) await datos.crear('eventos-ocultos', { ref: e.id });
     dlg.close(); await cargarEventos(); pintar();
   });
   dlg.showModal();

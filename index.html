@@ -7,8 +7,8 @@
   <meta name="description" content="Hub personal: inicio, calendario, fitness y finanzas.">
   <meta name="theme-color" content="#f4f2f8">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icons/icon-192.png" type="image/png">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png?v=2" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="HUB">
@@ -30,7 +30,7 @@
   <!-- Cabecera en piezas sueltas -->
   <header class="cabecera">
     <a class="pieza marca cristal" href="#inicio" aria-label="Ir al inicio">
-      <span class="marca-logo" aria-hidden="true">E</span>
+      <span class="marca-logo" aria-hidden="true"><svg viewBox="140 110 260 290" width="18" height="20"><g fill="none" stroke="currentColor" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"><path d="M330 150 H190 V362 H330"/><path d="M190 256 H244"/></g><path fill="currentColor" d="M330 206 C334 240 346 252 380 256 C346 260 334 272 330 306 C326 272 314 260 280 256 C314 252 326 240 330 206 Z"/></svg></span>
       <span class="marca-nombre">EVANGELISTA'S <b>HUB</b></span>
     </a>
     <nav class="secciones" id="nav-principal" aria-label="Secciones"></nav>
@@ -41,7 +41,7 @@
       <button class="pieza redonda cristal" id="abrir-notis" type="button" aria-label="Notificaciones">
         <span data-icono="campana"></span><span class="insignia" id="insignia" hidden></span>
       </button>
-      <button class="pieza redonda cristal" id="abrir-ia" type="button" aria-label="Preguntar a Claude">
+      <button class="pieza redonda cristal" id="abrir-ia" type="button" aria-label="Hablar con Elena">
         <span data-icono="chispa"></span>
       </button>
       <button class="pieza redonda cristal solo-escritorio" id="abrir-ajustes" type="button" aria-label="Personalizar">
@@ -85,7 +85,7 @@
   </dialog>
 
   <dialog class="hoja cristal hoja-ia" id="panel-ia" aria-labelledby="t-ia">
-    <div class="hoja-cabecera"><h2 id="t-ia">Preguntar a Claude</h2><button class="cerrar" data-cerrar aria-label="Cerrar"></button></div>
+    <div class="hoja-cabecera"><h2 id="t-ia">Elena</h2><button class="cerrar" data-cerrar aria-label="Cerrar"></button></div>
     <div class="hoja-cuerpo" id="ia-cuerpo"></div>
   </dialog>
 

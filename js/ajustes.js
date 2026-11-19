@@ -21,7 +21,6 @@ const PREDETERMINADOS = {
   fuente: 'predeterminada',
   movimiento: 'completo',
   texto: 'normal',
-  demo: true,
 };
 
 export const PRESETS = [
@@ -34,7 +33,7 @@ let fotoFondo = null;
 try { fotoFondo = localStorage.getItem(CLAVE_FOTO); } catch {}
 
 function cargar() {
-  try { return { ...PREDETERMINADOS, ...JSON.parse(localStorage.getItem(CLAVE)) }; }
+  try { const a = { ...PREDETERMINADOS, ...JSON.parse(localStorage.getItem(CLAVE)) }; delete a.demo; return a; }
   catch { return { ...PREDETERMINADOS }; }
 }
 function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(ajustes)); } catch {} }
@@ -42,8 +41,9 @@ function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(ajustes));
 const oscuroSistema = matchMedia('(prefers-color-scheme: dark)');
 oscuroSistema.addEventListener('change', () => aplicar());
 
-export const modoDemo = () => ajustes.demo;
-export function ponerDemo(v) { ajustes.demo = v; guardar(); }
+// Los datos de ejemplo se han quitado: la app solo muestra tus datos
+export const modoDemo = () => false;
+export function ponerDemo() {}
 export const esOscuro = () => document.documentElement.dataset.modo === 'oscuro';
 
 /* Calcula los tonos de acento y fondo a partir del color elegido.
@@ -111,12 +111,6 @@ const rango = (clave, etiqueta, min, max, paso = 1, clase = '') =>
 export function pintarPanel() {
   const el = document.getElementById('ajustes-cuerpo');
   el.innerHTML = `
-    <section class="grupo">
-      <p class="grupo-titulo">Datos de ejemplo</p>
-      ${seg('demo', [['true', 'Mostrar'], ['false', 'Ocultar']])}
-      <p class="nota">Rellena las secciones con datos inventados para ver cómo quedarán.</p>
-    </section>
-
     <section class="grupo">
       <p class="grupo-titulo">Apariencia</p>
       ${seg('modo', [['claro', 'Claro'], ['oscuro', 'Oscuro'], ['auto', 'Automático']])}
@@ -188,7 +182,6 @@ export function pintarPanel() {
     let v = b.dataset.valor;
     if (v === 'true' || v === 'false') v = v === 'true';
     cambiar(g.dataset.seg, v);
-    if (g.dataset.seg === 'demo') dispatchEvent(new Event('hub:recargar'));
     if (g.dataset.seg === 'fondo') { mostrarSubgrupos(); if (v === 'foto' && !fotoFondo) pedirFoto(); }
   }));
 
@@ -216,7 +209,7 @@ export function pintarPanel() {
     cambiar('fondo', 'animado'); pintarPanel();
   });
   el.querySelector('#restablecer').addEventListener('click', () => {
-    ajustes = { ...PREDETERMINADOS, demo: ajustes.demo }; guardar(); aplicar(); pintarPanel();
+    ajustes = { ...PREDETERMINADOS }; guardar(); aplicar(); pintarPanel();
   });
 
   mostrarSubgrupos();
