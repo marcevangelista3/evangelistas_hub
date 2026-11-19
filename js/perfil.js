@@ -5,7 +5,7 @@
    ========================================================= */
 import { icono } from './iconos.js';
 import { reducirImagen, elegirImagen } from './imagenes.js';
-import { usuarioActual, entrarConGoogle, entrarConCorreo, salir, sincronizar, ultimaSync } from './nube.js';
+import { usuarioActual, entrarConGoogle, entrarConCorreo, verificarCodigo, salir, sincronizar, ultimaSync } from './nube.js';
 
 const CLAVE = 'hub:perfil';
 let perfil = cargar();
@@ -101,7 +101,16 @@ function conectarCuenta(el, repintar) {
   el.querySelector('#form-correo')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const correo = e.target.correo.value.trim();
-    try { await entrarConCorreo(correo); nota.textContent = `Te he enviado un enlace a ${correo}. Ábrelo en este dispositivo para entrar.`; }
+    try {
+      await entrarConCorreo(correo);
+      e.target.outerHTML = `<form class="fila-correo" id="form-codigo"><input class="campo" name="codigo" inputmode="numeric" autocomplete="one-time-code" placeholder="Código de 6 dígitos" required maxlength="10"><button type="submit" class="boton primario">Entrar</button></form>`;
+      nota.textContent = `Te he enviado un correo a ${correo}. Escribe aquí el código o abre el enlace en este dispositivo.`;
+      el.querySelector('#form-codigo').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        try { await verificarCodigo(correo, ev.target.codigo.value.trim()); repintar(); }
+        catch (err) { fallo(err); }
+      });
+    }
     catch (err) { fallo(err); }
   });
   el.querySelector('#sync-ahora')?.addEventListener('click', async () => { await sincronizar(); repintar(); });

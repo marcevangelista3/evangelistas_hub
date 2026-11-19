@@ -89,6 +89,13 @@ export async function entrarConCorreo(correo) {
   if (error) throw error;
 }
 
+/** Entrar con el código de 6 dígitos del correo (útil en la app instalada del iPhone) */
+export async function verificarCodigo(correo, codigo) {
+  const sb = await obtenerCliente();
+  const { error } = await sb.auth.verifyOtp({ email: correo, token: codigo, type: 'email' });
+  if (error) throw error;
+}
+
 export async function salir() {
   const sb = await obtenerCliente();
   await sb.auth.signOut();
