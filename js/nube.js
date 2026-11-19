@@ -107,6 +107,8 @@ export async function crearCuenta(correo, clave) {
   const sb = await obtenerCliente();
   const { data, error } = await sb.auth.signUp({ email: correo, password: clave, options: { emailRedirectTo: volver() } });
   if (error) throw error;
+  // Supabase no avisa si el correo ya existe: devuelve un usuario sin identidades
+  if (data.user && !data.user.identities?.length) throw new Error('ya existe una cuenta con este correo. Pulsa Entrar con tu contraseña.');
   return !!data.session;
 }
 
