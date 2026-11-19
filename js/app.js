@@ -108,6 +108,7 @@ navegar();
 alCambiarCuenta(() => { if ($('panel-perfil')?.open) pintarPanelPerfil(acciones.ajustes); });
 addEventListener('hub:recuperar', () => acciones.perfil());
 iniciarNube();
+import('./google.js').then((G) => G.iniciarGoogle(alCambiarCuenta));
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:' && document.querySelector('link[rel=manifest]')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});

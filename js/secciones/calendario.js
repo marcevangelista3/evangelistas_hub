@@ -10,6 +10,8 @@ import { icono } from '../iconos.js';
 import { mes, contador, animarNumeros } from '../graficos.js';
 import { datos } from '../datos.js';
 import { TIPOS } from '../tipos.js';
+import { eventosGoogle, conectadoGoogle, estadoGoogle, conectarGoogle, desconectarGoogle, sincronizarGoogle, subirAGoogle, actualizarEnGoogle, borrarEnGoogle } from '../google.js';
+import { usuarioActual } from '../nube.js';
 
 const H_INI = 7, H_FIN = 24, ALTO = 48;
 const COLORES = ['cielo', 'lavanda', 'menta', 'melocoton', 'rosa', 'limon'];
@@ -29,15 +31,18 @@ let el, eventos = [];
 
 async function cargarEventos() {
   const propios = await datos.listar('eventos');
-  eventos = propios.map((p) => ({ ...p, id: p.ref || p.id, _propio: p.id }));
+  eventos = [...propios.map((p) => ({ ...p, id: p.ref || p.id, _propio: p.id })), ...eventosGoogle()];
 }
 
 export async function render(sub, contenedor) {
   el = contenedor;
   await cargarEventos();
-  document.getElementById('acciones-pagina').innerHTML = `<button class="boton primario" id="nuevo-evento">${icono('calendario')} Nuevo evento</button>`;
+  document.getElementById('acciones-pagina').innerHTML = `<button class="boton" id="boton-google">${conectadoGoogle() ? '● Google Calendar' : 'Conectar Google Calendar'}</button><button class="boton primario" id="nuevo-evento">${icono('calendario')} Nuevo evento</button>`;
   document.getElementById('nuevo-evento').onclick = () => abrirEditor({ fecha: iso(estado.fecha), ini: '10:00', fin: '11:00' });
+  document.getElementById('boton-google').onclick = abrirGoogle;
   pintar();
+  // Trae lo último de Google sin bloquear
+  sincronizarGoogle().then(async (cambio) => { if (cambio && el.isConnected && !document.querySelector('dialog[open]')) { await cargarEventos(); pintar(); } }).catch(() => {});
 }
 
 /* ---------- Rango de la vista ---------- */
@@ -246,14 +251,50 @@ function abrirEditor(ev = {}) {
       tipo: e.tipo, color: e.color, importancia: e.importancia, lugar: f.lugar.value.trim(), descripcion: f.descripcion.value.trim(),
       avisos: [...dlg.querySelectorAll('[data-aviso].activo')].map((b) => +b.dataset.aviso),
     };
-    if (e._propio) await datos.actualizar('eventos', e._propio, fila);
-    else await datos.crear('eventos', { ...fila, ref: nuevo ? undefined : e.id });
+    const boton = f.querySelector('[type=submit]'); boton.disabled = true;
+    try {
+      if (e._google) await actualizarEnGoogle(e.googleId, fila);
+      else if (e._propio) {
+        await datos.actualizar('eventos', e._propio, fila);
+        if (e.googleId) actualizarEnGoogle(e.googleId, fila).catch(() => {});
+      } else {
+        const nuevoEv = await datos.crear('eventos', fila);
+        subirAGoogle(nuevoEv).then((googleId) => googleId && datos.actualizar('eventos', nuevoEv.id, { googleId }));
+      }
+    } catch (err) { boton.disabled = false; alert(err.message); return; }
     dlg.close(); estado.fecha = deIso(fila.fecha); await cargarEventos(); pintar();
   };
   dlg.querySelector('#borrar-ev')?.addEventListener('click', async () => {
-    if (e._propio) await datos.borrar('eventos', e._propio);
+    try {
+      if (e._google) await borrarEnGoogle(e.googleId);
+      else { await datos.borrar('eventos', e._propio); if (e.googleId) borrarEnGoogle(e.googleId).catch(() => {}); }
+    } catch (err) { alert(err.message); return; }
     dlg.close(); await cargarEventos(); pintar();
   });
   dlg.showModal();
   if (nuevo) f.titulo.focus();
+}
+
+/* ---------- Google Calendar ---------- */
+function abrirGoogle() {
+  let dlg = document.getElementById('panel-google');
+  if (!dlg) {
+    dlg = document.createElement('dialog'); dlg.id = 'panel-google'; dlg.className = 'hoja cristal'; document.body.append(dlg);
+    dlg.addEventListener('click', (x) => { if (x.target === dlg || x.target.closest('[data-cerrar]')) dlg.close(); });
+  }
+  const g = estadoGoogle(), sesion = !!usuarioActual();
+  dlg.innerHTML = `<div class="hoja-cabecera"><h2>Google Calendar</h2><button class="cerrar" data-cerrar aria-label="Cerrar">${icono('cerrar')}</button></div>
+    <div class="hoja-cuerpo">
+      ${g.conectado ? `<p class="nota" style="margin-top:0">Conectado${g.correo ? ` con <b>${esc(g.correo)}</b>` : ''}. Tus eventos de Google salen aquí, en Próximos eventos y, si son entregas, exámenes o recordatorios, en Prioridades de hoy. Lo que crees en la app o con Elena se guarda también en Google.</p>
+        <div class="botones"><button class="boton primario" data-sinc>Sincronizar ahora</button><button class="boton peligro" data-desc>Desconectar</button></div>`
+      : `<p class="nota" style="margin-top:0">Conecta tu Google Calendar para ver tus eventos aquí y que lo que apuntes en la app (o le digas a Elena) aparezca también en Google, en el móvil y en el Mac.</p>
+        ${sesion ? '<div class="botones"><button class="boton primario" data-con>Conectar con Google</button></div><p class="nota">Google te avisará de que la app no está verificada: pulsa «Configuración avanzada» y luego «Ir a EVANGELISTA\'S HUB». Es tu propia app.</p>' : '<p class="nota"><b>Primero inicia sesión en Perfil.</b></p>'}`}
+      <p class="nota" data-msg></p>
+    </div>`;
+  const msg = dlg.querySelector('[data-msg]');
+  const ocupado = (b, t) => { b.disabled = true; b.textContent = t; };
+  dlg.querySelector('[data-con]')?.addEventListener('click', async (ev) => { ocupado(ev.target, 'Abriendo Google…'); try { await conectarGoogle(); } catch (err) { msg.textContent = err.message; ev.target.disabled = false; ev.target.textContent = 'Conectar con Google'; } });
+  dlg.querySelector('[data-sinc]')?.addEventListener('click', async (ev) => { ocupado(ev.target, 'Sincronizando…'); try { await sincronizarGoogle(); dlg.close(); await cargarEventos(); pintar(); } catch (err) { msg.textContent = err.message; ev.target.disabled = false; ev.target.textContent = 'Sincronizar ahora'; } });
+  dlg.querySelector('[data-desc]')?.addEventListener('click', async (ev) => { ocupado(ev.target, 'Desconectando…'); try { await desconectarGoogle(); } catch {} dlg.close(); dispatchEvent(new Event('hub:recargar')); });
+  dlg.showModal();
 }
