@@ -22,8 +22,8 @@
 .marca { padding: 0 16px 0 6px; }
 .marca-logo {
   width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
-  background: linear-gradient(135deg, var(--acento), var(--acento-m));
-  color: var(--acento-f); font-family: var(--f-titulo); font-weight: 800;
+  background: linear-gradient(135deg, #f5f4f8, #dedbe6);
+  color: #111114; box-shadow: 0 3px 8px rgba(0,0,0,.18); font-family: var(--f-titulo); font-weight: 800;
 }
 .marca-nombre { font-family: var(--f-titulo); font-weight: 600; letter-spacing: 0.03em; font-size: 0.88rem; }
 .marca-nombre b { font-weight: 800; }
