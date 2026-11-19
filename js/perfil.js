@@ -5,7 +5,7 @@
    ========================================================= */
 import { icono } from './iconos.js';
 import { reducirImagen, elegirImagen } from './imagenes.js';
-import { usuarioActual, entrarConClave, crearCuenta, salir, sincronizar, ultimaSync } from './nube.js';
+import { usuarioActual, entrarConClave, crearCuenta, recuperarClave, cambiarClave, modoRecuperacion, salir, sincronizar, ultimaSync } from './nube.js';
 
 const CLAVE = 'hub:perfil';
 let perfil = cargar();
@@ -79,6 +79,12 @@ function seccionCuenta() {
         <button type="button" class="boton" id="sync-ahora">Sincronizar ahora</button>
         <button type="button" class="boton" id="cerrar-sesion">Cerrar sesión</button>
       </div>
+      <form class="form-cuenta ${modoRecuperacion ? 'resaltado' : ''}" id="form-clave" style="margin-top:12px">
+        <p class="nota" style="margin:0">${modoRecuperacion ? '<b>Pon tu contraseña nueva:</b>' : 'Cambiar contraseña'}</p>
+        <input class="campo" type="password" name="nueva" placeholder="Contraseña nueva (mínimo 6)" required minlength="6" autocomplete="new-password">
+        <button type="submit" class="boton ${modoRecuperacion ? 'primario' : ''}">Guardar contraseña</button>
+      </form>
+      <p class="nota" id="nota-clave"></p>
     </section>`;
   return `
     <section class="grupo">
@@ -87,6 +93,7 @@ function seccionCuenta() {
         <input class="campo" type="email" name="correo" placeholder="Correo" required autocomplete="email">
         <input class="campo" type="password" name="clave" placeholder="Contraseña (mínimo 6 caracteres)" required minlength="6" autocomplete="current-password">
         <div class="botones"><button type="submit" class="boton primario" value="entrar">Entrar</button><button type="submit" class="boton" value="crear">Crear cuenta</button></div>
+        <button type="button" class="enlace-boton" id="olvide-clave">He olvidado la contraseña</button>
       </form>
       <p class="nota" id="nota-cuenta">Usa el mismo correo y contraseña en el Mac y en el iPhone para tener los mismos datos. Gratis.</p>
     </section>`;
@@ -108,6 +115,18 @@ function conectarCuenta(el, repintar) {
     } catch (err) {
       fallo(/invalid login/i.test(err.message) ? new Error('correo o contraseña incorrectos.') : /not confirmed/i.test(err.message) ? new Error('falta confirmar la cuenta desde el correo que te llegó.') : err);
     }
+  });
+  el.querySelector('#olvide-clave')?.addEventListener('click', async () => {
+    const correo = el.querySelector('#form-cuenta [name=correo]').value.trim();
+    if (!correo) { nota.textContent = 'Escribe primero tu correo arriba.'; return; }
+    try { await recuperarClave(correo); nota.textContent = `Te he enviado un correo a ${correo}. Ábrelo y pulsa el enlace: se abrirá la app para que pongas una contraseña nueva.`; }
+    catch (err) { fallo(err); }
+  });
+  el.querySelector('#form-clave')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const n = el.querySelector('#nota-clave');
+    try { await cambiarClave(e.target.nueva.value); n.textContent = 'Contraseña guardada. Úsala para entrar en el iPhone.'; e.target.reset(); }
+    catch (err) { n.textContent = 'No se ha podido: ' + err.message; }
   });
   el.querySelector('#sync-ahora')?.addEventListener('click', async () => { await sincronizar(); repintar(); });
   el.querySelector('#cerrar-sesion')?.addEventListener('click', async () => { await salir(); repintar(); });

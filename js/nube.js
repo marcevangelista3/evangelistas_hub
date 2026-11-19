@@ -43,6 +43,7 @@ Storage.prototype.removeItem = function (k) {
 
 /* ---------- Cliente ---------- */
 let cliente = null, usuario = null;
+export let modoRecuperacion = false;
 const oyentes = [];
 export const usuarioActual = () => usuario;
 export const alCambiarCuenta = (f) => oyentes.push(f);
@@ -65,6 +66,7 @@ export async function iniciarNube() {
     sb.auth.onAuthStateChange((evento, sesion) => {
       const antes = usuario?.id;
       usuario = sesion?.user ?? null;
+      if (evento === 'PASSWORD_RECOVERY') { modoRecuperacion = true; dispatchEvent(new Event('hub:recuperar')); }
       avisar();
       if (usuario && usuario.id !== antes) sincronizar();
     });
@@ -110,6 +112,19 @@ export async function crearCuenta(correo, clave) {
   // Supabase no avisa si el correo ya existe: devuelve un usuario sin identidades
   if (data.user && !data.user.identities?.length) throw new Error('ya existe una cuenta con este correo. Pulsa Entrar con tu contraseña.');
   return !!data.session;
+}
+
+/** Envía un correo para poner una contraseña nueva */
+export async function recuperarClave(correo) {
+  const sb = await obtenerCliente();
+  const { error } = await sb.auth.resetPasswordForEmail(correo, { redirectTo: volver() });
+  if (error) throw error;
+}
+export async function cambiarClave(nueva) {
+  const sb = await obtenerCliente();
+  const { error } = await sb.auth.updateUser({ password: nueva });
+  if (error) throw error;
+  modoRecuperacion = false;
 }
 
 export async function salir() {

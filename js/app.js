@@ -106,6 +106,7 @@ navegar();
 
 // Cuenta y sincronización: si el panel de perfil está abierto, se repinta al cambiar
 alCambiarCuenta(() => { if ($('panel-perfil')?.open) pintarPanelPerfil(acciones.ajustes); });
+addEventListener('hub:recuperar', () => acciones.perfil());
 iniciarNube();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:' && document.querySelector('link[rel=manifest]')) {
