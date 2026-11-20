@@ -49,7 +49,7 @@ export function pintarPanelPerfil(abrirAjustes) {
     </section>
     ${seccionCuenta()}
     <section class="grupo">
-      <button type="button" class="boton ancho primario" id="ir-ajustes">${icono('ajustes')} Personalizar el aspecto</button>
+      <button type="button" class="boton ancho primario" id="ir-ajustes">${icono('ajustes')} Ajustes y notificaciones</button>
     </section>`;
 
   el.querySelector('#perfil-nombre').addEventListener('change', (e) => {
