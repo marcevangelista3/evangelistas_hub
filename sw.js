@@ -1,6 +1,6 @@
 // Service worker: guarda la app para que abra sin conexión.
 // Sube VERSION cada vez que cambies archivos.
-const VERSION = 'hub-v21';
+const VERSION = 'hub-v22';
 const ARCHIVOS = [
   './', './index.html', './manifest.json',
   './css/tema.css', './css/estructura.css', './css/paneles.css', './css/movimiento.css', './css/graficos.css', './css/bienvenida.css',
@@ -34,7 +34,7 @@ self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { cuerpo: e.data?.text() }; }
   e.waitUntil(self.registration.showNotification(d.titulo || "EVANGELISTA'S HUB", {
-    body: d.cuerpo || '', icon: './icons/icon-192.png', badge: './icons/icon-192.png',
+    body: d.cuerpo || '', icon: './icons/icon-192.png?v=3', badge: './icons/icon-192.png?v=3',
     tag: d.tag, renotify: !!d.tag, data: { url: d.url || './' },
   }));
 });
