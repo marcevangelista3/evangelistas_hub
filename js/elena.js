@@ -33,7 +33,7 @@ export async function contexto() {
   try {
     const { correos } = await import('./correo.js');
     const cs = correos().slice(0, 15);
-    if (cs.length) p.push('Correos recientes de su Gmail (bandeja principal):\n' + cs.map((c) => `- ${new Date(c.fecha).toISOString().slice(0, 10)} · de ${c.de}${c.noLeido ? ' · sin leer' : ''}${c.importante ? ' · importante' : ''}: «${c.asunto}» ${c.fragmento.slice(0, 160)}`).join('\n'));
+    if (cs.length) p.push('Correos recientes de su bandeja principal:\n' + cs.map((c) => `- ${new Date(c.fecha).toISOString().slice(0, 10)} · de ${c.de} (${c.origen === 'outlook' ? 'Outlook' : 'Gmail'})${c.noLeido ? ' · sin leer' : ''}${c.importante ? ' · importante' : ''}: «${c.asunto}» ${c.fragmento.slice(0, 160)}`).join('\n'));
   } catch {}
   try {
     const F = await import('./finanzas-datos.js');

@@ -1,6 +1,6 @@
 // Service worker: guarda la app para que abra sin conexión.
 // Sube VERSION cada vez que cambies archivos.
-const VERSION = 'hub-v18';
+const VERSION = 'hub-v19';
 const ARCHIVOS = [
   './', './index.html', './manifest.json',
   './css/tema.css', './css/estructura.css', './css/paneles.css', './css/movimiento.css', './css/graficos.css', './css/bienvenida.css',

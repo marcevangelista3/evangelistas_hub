@@ -11,7 +11,8 @@ import { movimientosGuardados } from '../importar.js';
 import * as E from '../entrenos.js';
 import { aplicarWidgets, modoEdicion } from '../widgets.js';
 import { conectadoGoogle } from '../google.js';
-import { gmailActivo, importantes, correos, enlaceGmail, conectarGmail } from '../correo.js';
+import { gmailActivo, outlookActivo, algunCorreo, importantes, correos, enlace, conectarGmail, conectarOutlook, desconectarOutlook, estadoOutlook } from '../correo.js';
+import { estadoGoogle } from '../google.js';
 
 const TAM = { prioridades: 'xl', eventos: 'm', vistazo: 'm', finanzas: 'm', fitness: 'm', emails: 'full' };
 const COLOR_IMP = { alta: 'var(--rosa-f)', media: 'var(--melocoton-f)', baja: 'var(--menta-f)' };
@@ -47,10 +48,8 @@ function conectar(el) {
     }
     el.querySelector('#tareas-hechas').textContent = `${lista.filter((p) => p.hecha).length} de ${lista.length} hechas`;
   }));
-  el.querySelector('#conectar-gmail')?.addEventListener('click', async (ev) => {
-    ev.target.disabled = true; ev.target.textContent = 'Abriendo Google…';
-    try { await conectarGmail(); } catch (err) { ev.target.disabled = false; ev.target.textContent = 'Conectar Gmail'; el.querySelector('#msg-gmail').textContent = err.message; }
-  });
+  conectarBotonesCorreo(el.querySelector('[data-widget=emails]') || el);
+  el.querySelector('#cuentas-correo')?.addEventListener('click', abrirCuentasCorreo);
   el.querySelector('#correos-elena')?.addEventListener('click', () => {
     document.getElementById('abrir-ia').click();
     let n = 0; const t = setInterval(() => {
@@ -148,21 +147,50 @@ function haceCuanto(ms) {
   const d = Math.round(h / 24); return d === 1 ? 'ayer' : `hace ${d} días`;
 }
 function htmlCorreos() {
-  if (!gmailActivo()) {
-    return `<p class="vacio-inicio">${conectadoGoogle() ? 'Google ya está conectado, pero falta el permiso para leer tu Gmail.' : 'Conecta tu Gmail y aquí verás los correos importantes sin leer. La app solo los lee: nunca envía ni borra nada.'}</p>
-      <div class="botones"><button class="boton primario" id="conectar-gmail">${conectadoGoogle() ? 'Dar permiso a Gmail' : 'Conectar Gmail'}</button></div>
-      <p class="nota" id="msg-gmail">Google avisará de que la app no está verificada: «Configuración avanzada» → «Ir a EVANGELISTA'S HUB».</p>`;
+  if (!algunCorreo()) {
+    return `<p class="vacio-inicio">${conectadoGoogle() ? 'Google ya está conectado, pero falta el permiso para leer tu Gmail.' : 'Conecta tu correo y aquí verás los mensajes importantes sin leer.'} La app solo los lee: nunca envía ni borra nada.</p>
+      <div class="botones"><button class="boton primario" data-conectar="gmail">${conectadoGoogle() ? 'Dar permiso a Gmail' : 'Conectar Gmail'}</button><button class="boton" data-conectar="outlook">Conectar Outlook</button></div>
+      <p class="nota" id="msg-correo">Te saldrá un aviso de app no verificada: es tu propia app, puedes continuar.</p>`;
   }
-  const lista = importantes(6), sinLeer = correos().filter((c) => c.noLeido).length;
-  if (!lista.length) return '<p class="vacio-inicio">Nada importante sin leer en tu bandeja principal. 🎉</p>';
-  return `<ul class="lista-correos">${lista.map((c, j) => `
-      <li style="--j:${j}"><a href="${enlaceGmail(c)}" target="_blank" rel="noopener" class="${c.noLeido ? 'no-leido' : ''}">
-        <span class="correo-avatar">${esc((c.de || '?').trim().charAt(0).toUpperCase())}</span>
-        <span class="correo-texto"><span class="correo-linea"><b>${esc(c.de)}</b><small>${haceCuanto(c.fecha)}</small></span>
+  const lista = importantes(6), sinLeer = correos().filter((c) => c.noLeido).length, dos = gmailActivo() && outlookActivo();
+  const cuerpo = lista.length ? `<ul class="lista-correos">${lista.map((c, j) => `
+      <li style="--j:${j}"><a href="${enlace(c)}" target="_blank" rel="noopener" class="${c.noLeido ? 'no-leido' : ''}">
+        <span class="correo-avatar ${c.origen}">${esc((c.de || '?').trim().charAt(0).toUpperCase())}</span>
+        <span class="correo-texto"><span class="correo-linea"><b>${esc(c.de)}</b><small>${dos ? (c.origen === 'outlook' ? 'Outlook · ' : 'Gmail · ') : ''}${haceCuanto(c.fecha)}</small></span>
           <span class="correo-asunto">${c.destacado ? '★ ' : ''}${esc(c.asunto)}</span>
           <span class="correo-frag">${esc(c.fragmento)}</span></span>
-      </a></li>`).join('')}</ul>
-    <div class="tarjeta-pie"><span>${sinLeer} sin leer en los últimos 10 días</span><button class="enlace" id="correos-elena">Pregúntale a Elena qué contestar</button></div>`;
+      </a></li>`).join('')}</ul>` : '<p class="vacio-inicio">Nada importante sin leer en tu bandeja principal. 🎉</p>';
+  return `${cuerpo}
+    <div class="tarjeta-pie"><span>${sinLeer} sin leer · <button class="enlace" id="cuentas-correo">Cuentas</button></span>${lista.length ? '<button class="enlace" id="correos-elena">Pregúntale a Elena qué contestar</button>' : ''}</div>`;
+}
+
+function abrirCuentasCorreo() {
+  let dlg = document.getElementById('panel-correo');
+  if (!dlg) {
+    dlg = document.createElement('dialog'); dlg.id = 'panel-correo'; dlg.className = 'hoja cristal'; document.body.append(dlg);
+    dlg.addEventListener('click', (x) => { if (x.target === dlg || x.target.closest('[data-cerrar]')) dlg.close(); });
+  }
+  const fila = (nombre, activo, cuenta, accion) => `<div class="fila"><span class="etiqueta">${nombre}${activo && cuenta ? `<br><small class="nota">${esc(cuenta)}</small>` : ''}</span>${accion}</div>`;
+  dlg.innerHTML = `<div class="hoja-cabecera"><h2>Cuentas de correo</h2><button class="cerrar" data-cerrar aria-label="Cerrar">${icono('cerrar')}</button></div>
+    <div class="hoja-cuerpo">
+      <p class="nota" style="margin-top:0">La app solo lee la bandeja principal de los últimos 10 días. Nunca envía, mueve ni borra correos.</p>
+      ${fila('Gmail', gmailActivo(), estadoGoogle().correo, gmailActivo() ? '<span class="chip">Conectado</span>' : '<button class="boton" data-conectar="gmail">Conectar</button>')}
+      ${fila('Outlook', outlookActivo(), estadoOutlook().correo, outlookActivo() ? '<button class="boton peligro" data-desc-outlook>Desconectar</button>' : '<button class="boton" data-conectar="outlook">Conectar</button>')}
+      <p class="nota">Gmail se desconecta junto con Google Calendar, desde Calendario.</p>
+      <p class="nota" id="msg-correo"></p>
+    </div>`;
+  conectarBotonesCorreo(dlg);
+  dlg.querySelector('[data-desc-outlook]')?.addEventListener('click', async (ev) => {
+    ev.target.disabled = true; try { await desconectarOutlook(); } catch {} dlg.close(); dispatchEvent(new Event('hub:recargar'));
+  });
+  dlg.showModal();
+}
+function conectarBotonesCorreo(raiz) {
+  raiz.querySelectorAll('[data-conectar]').forEach((b) => b.addEventListener('click', async () => {
+    const t = b.textContent; b.disabled = true; b.textContent = 'Abriendo…';
+    try { await (b.dataset.conectar === 'outlook' ? conectarOutlook() : conectarGmail()); }
+    catch (err) { b.disabled = false; b.textContent = t; const m = raiz.querySelector('#msg-correo'); if (m) m.textContent = err.message; }
+  }));
 }
 
 function pagina() {

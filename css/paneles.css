@@ -145,3 +145,4 @@ a.boton { text-decoration: none; }
 .no-leido .correo-linea b, .no-leido .correo-asunto { font-weight: 800; }
 .no-leido .correo-avatar { box-shadow: 0 0 0 2px var(--rosa-f); }
 .tarjeta-pie button.enlace { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }
+.correo-avatar.outlook { background: var(--cielo); color: var(--cielo-f); }
