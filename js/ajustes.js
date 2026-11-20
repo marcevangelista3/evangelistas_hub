@@ -11,7 +11,8 @@ const CLAVE_FOTO = 'hub:fondo-foto';
 const PREDETERMINADOS = {
   modo: 'auto',
   acento: '#b9a8f0',
-  fondo: 'animado',       // animado | liso | foto
+  fondo: 'estrellas',     // estrellas | animado | liso | foto
+  bloqueo: true,          // pedir Touch ID / Face ID al entrar
   interactivo: true,
   velocidad: 1,
   fotoOpacidad: 100,
@@ -33,7 +34,12 @@ let fotoFondo = null;
 try { fotoFondo = localStorage.getItem(CLAVE_FOTO); } catch {}
 
 function cargar() {
-  try { const a = { ...PREDETERMINADOS, ...JSON.parse(localStorage.getItem(CLAVE)) }; delete a.demo; return a; }
+  try {
+    const a = { ...PREDETERMINADOS, ...JSON.parse(localStorage.getItem(CLAVE)) }; delete a.demo;
+    // Una sola vez: el cielo estrellado pasa a ser el fondo de todos
+    if (!a.cielo) { a.cielo = 1; a.fondo = 'estrellas'; }
+    return a;
+  }
   catch { return { ...PREDETERMINADOS }; }
 }
 function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(ajustes)); } catch {} }
@@ -71,9 +77,10 @@ function paleta(hex, oscuro) {
 
 export function aplicar() {
   const raiz = document.documentElement;
-  const modo = ajustes.modo === 'auto' ? (oscuroSistema.matches ? 'oscuro' : 'claro') : ajustes.modo;
-  Object.assign(raiz.dataset, { modo, fondo: ajustes.fondo, fuente: ajustes.fuente, movimiento: ajustes.movimiento, texto: ajustes.texto });
-  if (ajustes.fondo === 'foto' && !fotoFondo) raiz.dataset.fondo = 'animado';
+  // El cielo estrellado es de noche: siempre con el modo oscuro
+  const fondoEf = ajustes.fondo === 'foto' && !fotoFondo ? 'estrellas' : ajustes.fondo;
+  const modo = fondoEf === 'estrellas' ? 'oscuro' : ajustes.modo === 'auto' ? (oscuroSistema.matches ? 'oscuro' : 'claro') : ajustes.modo;
+  Object.assign(raiz.dataset, { modo, fondo: fondoEf, fuente: ajustes.fuente, movimiento: ajustes.movimiento, texto: ajustes.texto });
 
   const p = paleta(ajustes.acento, modo === 'oscuro');
   raiz.style.setProperty('--acento', p.acento);
@@ -92,14 +99,17 @@ export function aplicar() {
     colores: p.manchas, base: p.base, luz: p.luz,
     interactivo: ajustes.interactivo,
     velocidad: ajustes.movimiento === 'reducido' ? 0 : ajustes.velocidad,
-    activo: raiz.dataset.fondo === 'animado' && ajustes.movimiento !== 'reducido',
+    estilo: raiz.dataset.fondo === 'estrellas' ? 'estrellas' : 'manchas',
+    activo: ['animado', 'estrellas'].includes(raiz.dataset.fondo) && ajustes.movimiento !== 'reducido',
   });
 
   const metaColor = document.querySelector('meta[name=theme-color]');
-  if (metaColor) metaColor.content = modo === 'oscuro' ? '#16151d' : '#f4f2f8';
+  if (metaColor) metaColor.content = fondoEf === 'estrellas' ? '#04050b' : modo === 'oscuro' ? '#16151d' : '#f4f2f8';
 }
 
 function cambiar(clave, valor) { ajustes[clave] = valor; guardar(); aplicar(); }
+export const ajuste = (clave) => ajustes[clave];
+export const cambiarAjuste = cambiar;
 
 /* ---------- Panel ---------- */
 const seg = (clave, opciones) => `<div class="segmentado" data-seg="${clave}">${opciones
@@ -114,6 +124,7 @@ export function pintarPanel() {
     <section class="grupo">
       <p class="grupo-titulo">Apariencia</p>
       ${seg('modo', [['claro', 'Claro'], ['oscuro', 'Oscuro'], ['auto', 'Automático']])}
+      <p class="nota" data-solo="estrellas">Con el cielo estrellado la app usa siempre el modo oscuro.</p>
     </section>
 
     <section class="grupo">
@@ -135,8 +146,8 @@ export function pintarPanel() {
 
     <section class="grupo">
       <p class="grupo-titulo">Fondo</p>
-      ${seg('fondo', [['animado', 'Animado'], ['liso', 'Liso'], ['foto', 'Foto']])}
-      <div data-solo="animado">
+      ${seg('fondo', [['estrellas', 'Estrellas'], ['animado', 'Manchas'], ['liso', 'Liso'], ['foto', 'Foto']])}
+      <div data-solo="estrellas animado">
         <div class="fila"><span class="etiqueta">Reacciona al cursor</span>${seg('interactivo', [['true', 'Sí'], ['false', 'No']])}</div>
         ${rango('velocidad', 'Velocidad', 0.2, 3, 0.1)}
       </div>
@@ -148,6 +159,12 @@ export function pintarPanel() {
         ${rango('fotoOpacidad', 'Opacidad', 10, 100)}
         ${rango('fotoDesenfoque', 'Desenfoque', 0, 30)}
       </div>
+    </section>
+
+    <section class="grupo">
+      <p class="grupo-titulo">Entrada a la app</p>
+      <div class="fila"><span class="etiqueta">Pedir ${/iPhone|iPad/.test(navigator.userAgent) ? 'Face ID' : 'Touch ID'}</span>${seg('bloqueo', [['true', 'Sí'], ['false', 'No']])}</div>
+      <p class="nota">Al abrir la app, o al volver tras 5 minutos fuera, se desbloquea con tu huella o tu cara. Es un candado de este dispositivo: tus datos siguen en tu cuenta.</p>
     </section>
 
     <section class="grupo">
@@ -206,10 +223,10 @@ export function pintarPanel() {
   el.querySelector('#elegir-foto').addEventListener('click', pedirFoto);
   el.querySelector('#quitar-foto').addEventListener('click', () => {
     fotoFondo = null; try { localStorage.removeItem(CLAVE_FOTO); } catch {}
-    cambiar('fondo', 'animado'); pintarPanel();
+    cambiar('fondo', 'estrellas'); pintarPanel();
   });
   el.querySelector('#restablecer').addEventListener('click', () => {
-    ajustes = { ...PREDETERMINADOS }; guardar(); aplicar(); pintarPanel();
+    ajustes = { ...PREDETERMINADOS, cielo: 1 }; guardar(); aplicar(); pintarPanel();
   });
 
   mostrarSubgrupos();
@@ -217,7 +234,7 @@ export function pintarPanel() {
 }
 
 function mostrarSubgrupos() {
-  document.querySelectorAll('#ajustes-cuerpo [data-solo]').forEach((d) => { d.hidden = d.dataset.solo !== ajustes.fondo; });
+  document.querySelectorAll('#ajustes-cuerpo [data-solo]').forEach((d) => { d.hidden = !d.dataset.solo.split(' ').includes(ajustes.fondo); });
 }
 
 // origen: qué control ha cambiado (para no pisar lo que el usuario está moviendo)

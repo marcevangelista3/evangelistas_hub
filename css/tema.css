@@ -114,3 +114,11 @@ svg { display: block; }
 @media (prefers-reduced-transparency: reduce) {
   .cristal { background: var(--cristal-fuerte); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
+
+/* Cristal más frío y algo más marcado sobre el cielo estrellado */
+[data-fondo="estrellas"] {
+  --bg: #04050b;
+  --cristal-rgb: 26, 28, 48;
+  --cristal-borde: rgba(255, 255, 255, 0.12);
+  --cristal-sombra: 0 10px 34px rgba(0, 0, 0, 0.55);
+}

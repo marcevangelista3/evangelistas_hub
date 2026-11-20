@@ -4,6 +4,7 @@ import { obtenerPerfil } from '../perfil.js';
 import { contador, barraProgreso, anillo } from '../graficos.js';
 import { totalesDia } from '../nutricion.js';
 import { objetivos, iso, sumarDias } from '../registro.js';
+import { celebrar, felicitar } from '../celebrar.js';
 import { prioridades, marcarHecha, crearEvento, eventos as listaEventos } from '../agenda.js';
 import { TIPOS } from '../tipos.js';
 import { movimientosGuardados } from '../importar.js';
@@ -37,6 +38,11 @@ function conectar(el) {
     li.classList.toggle('hecha', hecha);
     marcarHecha(li.dataset.tarea, hecha);
     const lista = prioridades();
+    if (hecha) {
+      const todas = lista.length && lista.every((p) => p.hecha);
+      celebrar(li.querySelector('.check'), todas ? 'grande' : 'pequeno');
+      if (todas) felicitar('¡Todo hecho por hoy!');
+    }
     el.querySelector('#tareas-hechas').textContent = `${lista.filter((p) => p.hecha).length} de ${lista.length} hechas`;
   }));
   const f = el.querySelector('#nueva-prioridad');
@@ -44,6 +50,7 @@ function conectar(el) {
     e.preventDefault();
     const titulo = f.titulo.value.trim(); if (!titulo) return;
     crearEvento({ titulo, tipo: 'recordatorio', fecha: iso() });
+    celebrar(e.submitter || f, 'pequeno');
     dispatchEvent(new Event('hub:recargar'));
   };
 }

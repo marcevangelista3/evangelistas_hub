@@ -9,8 +9,10 @@ import { aplicar, pintarPanel } from './ajustes.js';
 import { animarNumeros } from './graficos.js';
 import { pintarAvatares, pintarPanelPerfil, alCambiarPerfil } from './perfil.js';
 import { prepararBuscador, pintarNotificaciones, pintarIA } from './paneles.js';
+import { iniciarBienvenida } from './bienvenida.js';
 
 aplicar();
+iniciarBienvenida(alCambiarCuenta);
 pintarIconos();
 pintarAvatares();
 

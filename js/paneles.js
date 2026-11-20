@@ -2,6 +2,7 @@
    BUSCADOR, NOTIFICACIONES E IA
    ========================================================= */
 import { SECCIONES } from './secciones.js';
+import { celebrar } from './celebrar.js';
 import { icono } from './iconos.js';
 import { datos } from './datos.js';
 
@@ -116,7 +117,7 @@ export async function pintarIA() {
     const m = conversacion[+caja.dataset.msg];
     caja.querySelector('[data-aplicar]')?.addEventListener('click', async (ev) => {
       ev.target.disabled = true;
-      try { for (const a of m.acciones) await E.aplicar(a); m.estado = 'aplicado'; }
+      try { for (const a of m.acciones) await E.aplicar(a); m.estado = 'aplicado'; celebrar(ev.target, m.acciones.length > 2 ? 'medio' : 'pequeno'); }
       catch (err) { m.estado = 'pendiente'; alertar(caja, err); return; }
       pintarIA(); dispatchEvent(new Event('hub:recargar'));
     });

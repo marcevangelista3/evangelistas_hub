@@ -1,4 +1,5 @@
 import { tarjeta, rejilla, esc } from '../ui.js';
+import { celebrar } from '../celebrar.js';
 import { icono } from '../iconos.js';
 import { contador, barraProgreso, anillo, linea, barras, mes, carrusel, activarCarruseles, animarNumeros } from '../graficos.js';
 import { alimentos, buscarAlimento, anadirAlimento, cargarComidas, guardarComidas, macrosItem, macrosComida, totalesDia, totalesPorDia } from '../nutricion.js';
@@ -170,6 +171,7 @@ function conectarDieta(el) {
       clave = anadirAlimento(nombre, [f.kcal.value, f.p.value, f.c.value, f.gr.value]);
     }
     comidas[j].items.push([clave, g]);
+    celebrar(e.submitter || f, 'pequeno');
     if (!comidas[j].hora && diaDieta === iso()) comidas[j].hora = new Date().toTimeString().slice(0, 5);
     refrescar();
   });
@@ -258,7 +260,7 @@ function abrirFisico() {
   form.onsubmit = (e) => {
     e.preventDefault();
     ['edad', 'altura', 'cuello', 'cintura', 'cadera'].forEach((k) => { if (form[k].value) f[k] = +form[k].value; });
-    guardarFisico(f); dlg.close(); recargar();
+    celebrar(e.submitter, 'pequeno'); guardarFisico(f); dlg.close(); recargar();
   };
 }
 
@@ -270,7 +272,7 @@ function abrirPeso() {
     <p class="nota">Mejor siempre a la misma hora, por ejemplo al levantarte. Si ya hay un peso ese día, se sustituye.</p>
     <div class="grupo"><button class="boton primario ancho" type="submit">Guardar</button></div>`);
   const form = dlg.querySelector('form');
-  form.onsubmit = (e) => { e.preventDefault(); apuntarPeso(+form.kg.value, form.fecha.value); dlg.close(); recargar(); };
+  form.onsubmit = (e) => { e.preventDefault(); celebrar(e.submitter, 'pequeno'); apuntarPeso(+form.kg.value, form.fecha.value); dlg.close(); recargar(); };
 }
 
 export function abrirObjetivos() {
@@ -284,6 +286,7 @@ export function abrirObjetivos() {
   const form = dlg.querySelector('form');
   form.onsubmit = (e) => {
     e.preventDefault();
+    celebrar(e.submitter, 'medio');
     guardarObjetivos(Object.fromEntries(['kcal', 'prot', 'carb', 'gras', 'entrenosMes', 'ahorroMes'].map((k) => [k, +form[k].value])));
     dlg.close(); recargar();
   };

@@ -3,6 +3,7 @@ import { icono } from '../iconos.js';
 import { objetivos } from '../registro.js';
 import { leerArchivo, detectar, convertir, guardarMovimientos, movimientosGuardados, bajarMovimientos } from '../importar.js';
 import { usuarioActual } from '../nube.js';
+import { celebrar } from '../celebrar.js';
 import { contador, barras, donut, barraProgreso, animarNumeros } from '../graficos.js';
 import { MESES, MESES_LARGOS, CATEGORIAS, resumenMes, recomendaciones, usarMovimientos } from '../finanzas-datos.js';
 
@@ -68,6 +69,7 @@ function abrirImportar() {
         ev.target.disabled = true; ev.target.textContent = 'Guardando…';
         try {
           const n = await guardarMovimientos(movs);
+          if (n) celebrar(prev, 'medio');
           prev.innerHTML = `<p class="nota"><b>${n} movimientos nuevos importados</b>${movs.length - n ? ` (${movs.length - n} ya estaban)` : ''}.</p>`;
           setTimeout(() => { dlg.close(); dispatchEvent(new Event('hub:recargar')); }, 900);
         } catch (err) { prev.innerHTML = `<p class="nota">No se ha podido guardar: ${esc(err.message)}</p>`; }

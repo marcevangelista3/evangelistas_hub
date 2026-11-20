@@ -12,6 +12,7 @@ import { datos } from '../datos.js';
 import { TIPOS } from '../tipos.js';
 import { eventosGoogle, conectadoGoogle, estadoGoogle, conectarGoogle, desconectarGoogle, sincronizarGoogle, subirAGoogle, actualizarEnGoogle, borrarEnGoogle } from '../google.js';
 import { usuarioActual } from '../nube.js';
+import { celebrar } from '../celebrar.js';
 
 const H_INI = 7, H_FIN = 24, ALTO = 48;
 const COLORES = ['cielo', 'lavanda', 'menta', 'melocoton', 'rosa', 'limon'];
@@ -262,6 +263,7 @@ function abrirEditor(ev = {}) {
         subirAGoogle(nuevoEv).then((googleId) => googleId && datos.actualizar('eventos', nuevoEv.id, { googleId }));
       }
     } catch (err) { boton.disabled = false; alert(err.message); return; }
+    celebrar(boton, 'pequeno');
     dlg.close(); estado.fecha = deIso(fila.fecha); await cargarEventos(); pintar();
   };
   dlg.querySelector('#borrar-ev')?.addEventListener('click', async () => {

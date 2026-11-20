@@ -2,6 +2,7 @@
    VISTAS DE ENTRENOS (Fitness › Inicio y Fitness › Ejercicios)
    ========================================================= */
 import { tarjeta, rejilla, esc } from './ui.js';
+import { celebrar, felicitar } from './celebrar.js';
 import { icono } from './iconos.js';
 import { barras } from './graficos.js';
 import * as E from './entrenos.js';
@@ -110,6 +111,7 @@ function conectarSesion(raiz, alTerminar) {
     f.querySelector('[data-ok]').onclick = () => {
       f.querySelectorAll('input').forEach((inp) => { e.series[i][inp.dataset.campo] = num(inp.value); });
       e.series[i].hecha = !e.series[i].hecha;
+      if (e.series[i].hecha) celebrar(f.querySelector('[data-ok]'), e.series.every((s) => s.hecha) ? 'medio' : 'pequeno');
       guardar();
       if (e.series[i].hecha) {
         if (e.series.every((s) => s.hecha) && ses.actual < ses.ejercicios.length - 1) setTimeout(() => { ses.actual++; guardar(); }, 600);
@@ -135,7 +137,7 @@ function conectarSesion(raiz, alTerminar) {
       ses.actual = ses.ejercicios.length - 1; guardar(); };
   };
   raiz.querySelector('[data-descartar]').onclick = () => { if (confirmar(raiz.querySelector('[data-descartar]'))) { E.descartar(); alTerminar(); } };
-  raiz.querySelector('[data-terminar]').onclick = () => { const reg = E.terminar(); if (descanso) { clearInterval(descanso.timer); descanso = null; } alTerminar(reg); };
+  raiz.querySelector('[data-terminar]').onclick = (ev) => { celebrar(ev.currentTarget, 'grande'); felicitar('¡Entreno terminado!'); const reg = E.terminar(); if (descanso) { clearInterval(descanso.timer); descanso = null; } alTerminar(reg); };
 }
 
 // Confirmación en dos toques (sin diálogos del navegador)

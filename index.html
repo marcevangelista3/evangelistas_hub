@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" class="bloqueado">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -21,11 +21,28 @@
   <link rel="stylesheet" href="css/paneles.css">
   <link rel="stylesheet" href="css/graficos.css">
   <link rel="stylesheet" href="css/movimiento.css">
+  <link rel="stylesheet" href="css/bienvenida.css">
 </head>
 <body>
   <!-- Fondo: animado (canvas), foto o liso -->
   <canvas id="fondo" class="fondo-animado" aria-hidden="true"></canvas>
   <div id="fondo-foto" class="fondo-foto" aria-hidden="true"></div>
+
+  <!-- Bienvenida y desbloqueo con Touch ID / Face ID -->
+  <div id="bienvenida" class="bienvenida" role="dialog" aria-modal="true" aria-labelledby="bv-hola">
+    <div class="bv-centro">
+      <div class="bv-logo" id="bv-logo"><img src="icons/icon-512.png?v=3" alt="" width="128" height="128"></div>
+      <p class="bv-marca">EVANGELISTA'S <b>HUB</b></p>
+      <h1 class="bv-hola" id="bv-hola">Hola</h1>
+      <p class="bv-fecha" id="bv-fecha"></p>
+      <div class="bv-acciones">
+        <button type="button" class="bv-boton" id="bv-boton">Entrar</button>
+        <button type="button" class="bv-enlace" id="bv-luego" hidden>Ahora no</button>
+        <p class="bv-error" id="bv-error" role="status" hidden></p>
+        <button type="button" class="bv-enlace" id="bv-otro" hidden>¿No funciona? Entra con tu cuenta de Google</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Cabecera en piezas sueltas -->
   <header class="cabecera">

@@ -60,3 +60,10 @@ dialog[open]::backdrop { animation: aparecer .3s ease both; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- Reacciones al terminar algo ---------- */
+.lienzo-celebrar { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999;
+  margin: 0; padding: 0; border: 0; background: transparent; overflow: visible; max-width: none; max-height: none; }
+@keyframes pum { 0% { transform: scale(1); } 30% { transform: scale(1.28); } 55% { transform: scale(.92); } 100% { transform: scale(1); } }
+.pum { animation: pum .5s var(--rebote) both; }
+.felicitar { top: calc(84px + env(safe-area-inset-top)); bottom: auto; z-index: 60; font-size: 1rem; }
