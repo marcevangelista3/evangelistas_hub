@@ -166,6 +166,11 @@ export function pintarPanel() {
       <div data-avisos-cuerpo><p class="nota">Cargando…</p></div>
     </section>
 
+    <section class="grupo" id="grupo-atajos">
+      <p class="grupo-titulo">Siri y Salud (Atajos)</p>
+      <div data-atajos-cuerpo><p class="nota">Cargando…</p></div>
+    </section>
+
     <section class="grupo">
       <p class="grupo-titulo">Entrada a la app</p>
       <div class="fila"><span class="etiqueta">Pedir ${/iPhone|iPad/.test(navigator.userAgent) ? 'Face ID' : 'Touch ID'}</span>${seg('bloqueo', [['true', 'Sí'], ['false', 'No']])}</div>
@@ -237,6 +242,52 @@ export function pintarPanel() {
   mostrarSubgrupos();
   sincronizarColor();
   pintarAvisos(el.querySelector('[data-avisos-cuerpo]'));
+  pintarAtajos(el.querySelector('[data-atajos-cuerpo]'));
+}
+
+/* ---------- Atajos de Apple ---------- */
+const URL_ATAJO = 'https://ypffurbjhsypgdpvtwlw.supabase.co/functions/v1/atajo';
+async function invocarAtajo(cuerpo) {
+  const { obtenerCliente, usuarioActual } = await import('./nube.js');
+  if (!usuarioActual()) throw new Error('Inicia sesión en Perfil primero.');
+  const { data, error } = await (await obtenerCliente()).functions.invoke('atajo', { body: cuerpo });
+  if (error) throw new Error('No se ha podido hablar con el servidor.');
+  return data;
+}
+async function pintarAtajos(caja, tokenNuevo = null) {
+  let est = { tiene: false };
+  try { est = await invocarAtajo({ accion: 'estado' }); } catch (e) { caja.innerHTML = `<p class="nota">${e.message}</p>`; return; }
+  const copiar = (txt) => `<button type="button" class="boton" data-copiar="${txt}">Copiar</button>`;
+  caja.innerHTML = `
+    <p class="nota" style="margin-top:0">Con un Atajo de Apple puedes decir «Oye Siri, Elena» y dictarle lo que quieras apuntar, y pasar a Fitness tu peso, tus pasos y tus entrenos de Salud.</p>
+    ${tokenNuevo ? `<div class="atajo-codigo"><p class="nota"><b>Tu código</b> (solo se enseña ahora; guárdalo en el Atajo):</p><code>${tokenNuevo}</code>${copiar(tokenNuevo)}</div>`
+      : `<p class="nota">${est.tiene ? `Ya tienes un código creado${est.usado ? ' y en uso' : ''}. Si lo has perdido, crea otro (el anterior deja de funcionar).` : 'Primero crea tu código personal.'}</p>`}
+    <div class="botones"><button type="button" class="boton ${est.tiene ? '' : 'primario'}" data-crear-token>${est.tiene ? 'Crear un código nuevo' : 'Crear mi código'}</button>${est.tiene ? '<button type="button" class="boton peligro" data-borrar-token>Desactivar</button>' : ''}</div>
+    <details class="atajo-guia"><summary>Cómo crear el Atajo «Elena»</summary><ol>
+      <li>Abre la app <b>Atajos</b>, pulsa <b>+</b> y llámalo <b>Elena</b> (así funciona «Oye Siri, Elena»).</li>
+      <li>Añade <b>Dictar texto</b> (idioma: Español (España)).</li>
+      <li>Añade <b>Obtener contenido de URL</b> con esta URL: <code>${URL_ATAJO}</code> ${copiar(URL_ATAJO)}<br>
+        Método <b>POST</b>. En Cabeceras: <code>x-hub-token</code> = tu código. En Cuerpo de la solicitud elige <b>JSON</b> y añade: <code>accion</code> = <code>elena</code> y <code>texto</code> = la variable «Texto dictado».</li>
+      <li>Añade <b>Obtener valor del diccionario</b>: clave <code>respuesta</code>.</li>
+      <li>Añade <b>Leer texto</b> (o «Mostrar resultado») con ese valor.</li>
+    </ol></details>
+    <details class="atajo-guia"><summary>Cómo pasar tus datos de Salud cada noche</summary><ol>
+      <li>En Atajos, ve a <b>Automatización → Nueva → Hora del día</b>, por ejemplo a las 23:00, y marca <b>Ejecutar inmediatamente</b>.</li>
+      <li>Añade <b>Buscar muestras de salud</b>: Pasos, de hoy, agrupar por día. Luego <b>Calcular estadísticas</b>: suma.</li>
+      <li>Añade <b>Buscar muestras de salud</b>: Peso, ordenar por fecha (más reciente primero), límite 1.</li>
+      <li>Añade <b>Obtener contenido de URL</b> con la misma URL y cabecera, cuerpo JSON: <code>accion</code> = <code>salud</code>, <code>pasos</code> = la suma, <code>peso</code> = el peso.</li>
+      <li>Si quieres, también los entrenos del reloj: <code>entreno</code> como diccionario con <code>nombre</code> y <code>minutos</code>.</li>
+    </ol></details>
+    <p class="nota" data-atajo-msg></p>`;
+  caja.querySelectorAll('[data-copiar]').forEach((b) => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copiar); b.textContent = 'Copiado'; setTimeout(() => { b.textContent = 'Copiar'; }, 1500); } catch {}
+  }));
+  caja.querySelector('[data-crear-token]').addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    try { const { token } = await invocarAtajo({ accion: 'crear_token' }); pintarAtajos(caja, token); }
+    catch (err) { e.target.disabled = false; caja.querySelector('[data-atajo-msg]').textContent = err.message; }
+  });
+  caja.querySelector('[data-borrar-token]')?.addEventListener('click', async (e) => { e.target.disabled = true; await invocarAtajo({ accion: 'borrar_token' }).catch(() => {}); pintarAtajos(caja); });
 }
 
 /* ---------- Notificaciones ---------- */

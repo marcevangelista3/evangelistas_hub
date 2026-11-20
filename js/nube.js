@@ -186,7 +186,7 @@ export async function sincronizar() {
     ultimaSync = new Date();
     dispatchEvent(new CustomEvent('hub:sync'));
     // Si han llegado datos de otro dispositivo, se recarga una vez para aplicarlos (ajustes, perfil, vistas)
-    if (cambios) location.reload();
+    if (cambios) { try { sessionStorage.setItem('hub-local:recarga-sync', '1'); } catch {} location.reload(); }
   } catch (e) {
     console.warn('Error de sincronización:', e.message);
   } finally {

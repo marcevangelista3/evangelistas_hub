@@ -148,7 +148,11 @@ otro.addEventListener('click', async () => {
 /* ---------- Arranque y vuelta a la app ---------- */
 export function iniciarBienvenida(alCambiarCuenta) {
   if (!caja) return;
-  mostrar();
+  // Recarga automática por datos nuevos de otro dispositivo: se entra directo
+  let recarga = false;
+  try { recarga = sessionStorage.getItem('hub-local:recarga-sync') === '1'; sessionStorage.removeItem('hub-local:recarga-sync'); } catch {}
+  if (recarga) { raiz.classList.remove('bloqueado'); caja.hidden = true; primeraVez = false; }
+  else mostrar();
   if (vieneDeGoogle) alCambiarCuenta((u) => { if (u && raiz.classList.contains('bloqueado')) entrar(true); });
   let fuera = 0;
   document.addEventListener('visibilitychange', () => {

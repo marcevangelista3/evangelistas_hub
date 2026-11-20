@@ -146,3 +146,11 @@ a.boton { text-decoration: none; }
 .no-leido .correo-avatar { box-shadow: 0 0 0 2px var(--rosa-f); }
 .tarjeta-pie button.enlace { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }
 .correo-avatar.outlook { background: var(--cielo); color: var(--cielo-f); }
+
+/* ---------- Atajos ---------- */
+.atajo-codigo { display: grid; gap: 8px; padding: 12px; border-radius: 14px; background: var(--brillo); margin: 8px 0; }
+.atajo-codigo code, .atajo-guia code { font-size: .8rem; word-break: break-all; background: var(--linea); padding: 2px 6px; border-radius: 6px; }
+.atajo-guia { margin-top: 10px; font-size: .9rem; }
+.atajo-guia summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+.atajo-guia ol { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 8px; color: var(--suave); }
+.atajo-guia .boton { padding: 4px 10px; font-size: .78rem; }

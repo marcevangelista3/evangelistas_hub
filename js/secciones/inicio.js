@@ -139,9 +139,12 @@ function htmlFitness(T, O) {
       ${barraProgreso('Proteína', r(T.p), O.prot, { color: 'var(--rosa-f)', unidad: 'g', i: 1 })}
       ${barraProgreso('Carbohidratos', r(T.c), O.carb, { color: 'var(--cielo-f)', unidad: 'g', i: 2 })}
     </div>
-    <div class="tarjeta-pie"><span>Racha de <b>${actual} ${actual === 1 ? 'día' : 'días'}</b></span><span>${hecho ? `Hecho: ${esc(hecho.nombre)}` : hoy ? `Hoy toca: ${esc(hoy.nombre)}` : E.rutinas().length ? 'Hoy: descanso' : '<a class="enlace" href="#fitness-ejercicios">Crea tu primer entreno</a>'}</span></div>`;
+    <div class="tarjeta-pie"><span>Racha de <b>${actual} ${actual === 1 ? 'día' : 'días'}</b>${pasosHoy() != null ? ` · <b>${pasosHoy().toLocaleString('es-ES')}</b> pasos` : ''}</span><span>${hecho ? `Hecho: ${esc(hecho.nombre)}` : hoy ? `Hoy toca: ${esc(hoy.nombre)}` : E.rutinas().length ? 'Hoy: descanso' : '<a class="enlace" href="#fitness-ejercicios">Crea tu primer entreno</a>'}</span></div>`;
 }
 
+function pasosHoy() {
+  try { const v = JSON.parse(localStorage.getItem('hub:pasos'))?.[iso()]; return Number.isFinite(v) ? v : null; } catch { return null; }
+}
 function haceCuanto(ms) {
   const min = Math.round((Date.now() - ms) / 60000);
   if (min < 60) return `hace ${Math.max(1, min)} min`;
