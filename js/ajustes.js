@@ -269,7 +269,7 @@ async function pintarAtajos(caja, tokenNuevo = null) {
       <li>Añade <b>Obtener contenido de URL</b> con esta URL: <code>${URL_ATAJO}</code> ${copiar(URL_ATAJO)}<br>
         Método <b>POST</b>. En Cabeceras: <code>x-hub-token</code> = tu código. En Cuerpo de la solicitud elige <b>JSON</b> y añade: <code>accion</code> = <code>elena</code> y <code>texto</code> = la variable «Texto dictado».</li>
       <li>Añade <b>Obtener valor del diccionario</b>: clave <code>respuesta</code>.</li>
-      <li>Añade <b>Leer texto</b> (o «Mostrar resultado») con ese valor.</li>
+      <li>Añade <b>Leer texto con voz</b> (o «Mostrar resultado») con ese valor.</li>
     </ol></details>
     <details class="atajo-guia"><summary>Cómo pasar tus datos de Salud cada noche</summary><ol>
       <li>En Atajos, ve a <b>Automatización → Nueva → Hora del día</b>, por ejemplo a las 23:00, y marca <b>Ejecutar inmediatamente</b>.</li>
