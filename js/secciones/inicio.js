@@ -14,6 +14,8 @@ import { conectadoGoogle } from '../google.js';
 import { gmailActivo, outlookActivo, algunCorreo, importantes, correos, enlace, conectarGmail, conectarOutlook, desconectarOutlook, estadoOutlook } from '../correo.js';
 import { estadoGoogle } from '../google.js';
 
+// Outlook queda oculto: la cuenta de Marc es del centro y no permite registrar la app
+const OUTLOOK = false;
 const TAM = { prioridades: 'xl', eventos: 'm', vistazo: 'm', finanzas: 'm', fitness: 'm', emails: 'full' };
 const COLOR_IMP = { alta: 'var(--rosa-f)', media: 'var(--melocoton-f)', baja: 'var(--menta-f)' };
 const fDia = new Intl.DateTimeFormat('es-ES', { weekday: 'short', day: 'numeric' });
@@ -149,7 +151,7 @@ function haceCuanto(ms) {
 function htmlCorreos() {
   if (!algunCorreo()) {
     return `<p class="vacio-inicio">${conectadoGoogle() ? 'Google ya está conectado, pero falta el permiso para leer tu Gmail.' : 'Conecta tu correo y aquí verás los mensajes importantes sin leer.'} La app solo los lee: nunca envía ni borra nada.</p>
-      <div class="botones"><button class="boton primario" data-conectar="gmail">${conectadoGoogle() ? 'Dar permiso a Gmail' : 'Conectar Gmail'}</button><button class="boton" data-conectar="outlook">Conectar Outlook</button></div>
+      <div class="botones"><button class="boton primario" data-conectar="gmail">${conectadoGoogle() ? 'Dar permiso a Gmail' : 'Conectar Gmail'}</button>${OUTLOOK ? '<button class="boton" data-conectar="outlook">Conectar Outlook</button>' : ''}</div>
       <p class="nota" id="msg-correo">Te saldrá un aviso de app no verificada: es tu propia app, puedes continuar.</p>`;
   }
   const lista = importantes(6), sinLeer = correos().filter((c) => c.noLeido).length, dos = gmailActivo() && outlookActivo();
@@ -175,7 +177,7 @@ function abrirCuentasCorreo() {
     <div class="hoja-cuerpo">
       <p class="nota" style="margin-top:0">La app solo lee la bandeja principal de los últimos 10 días. Nunca envía, mueve ni borra correos.</p>
       ${fila('Gmail', gmailActivo(), estadoGoogle().correo, gmailActivo() ? '<span class="chip">Conectado</span>' : '<button class="boton" data-conectar="gmail">Conectar</button>')}
-      ${fila('Outlook', outlookActivo(), estadoOutlook().correo, outlookActivo() ? '<button class="boton peligro" data-desc-outlook>Desconectar</button>' : '<button class="boton" data-conectar="outlook">Conectar</button>')}
+      ${!OUTLOOK && !outlookActivo() ? '' : fila('Outlook', outlookActivo(), estadoOutlook().correo, outlookActivo() ? '<button class="boton peligro" data-desc-outlook>Desconectar</button>' : '<button class="boton" data-conectar="outlook">Conectar</button>')}
       <p class="nota">Gmail se desconecta junto con Google Calendar, desde Calendario.</p>
       <p class="nota" id="msg-correo"></p>
     </div>`;

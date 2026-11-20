@@ -1,10 +1,10 @@
 // Service worker: guarda la app para que abra sin conexión.
 // Sube VERSION cada vez que cambies archivos.
-const VERSION = 'hub-v19';
+const VERSION = 'hub-v20';
 const ARCHIVOS = [
   './', './index.html', './manifest.json',
   './css/tema.css', './css/estructura.css', './css/paneles.css', './css/movimiento.css', './css/graficos.css', './css/bienvenida.css',
-  './js/app.js', './js/bienvenida.js', './js/celebrar.js', './js/correo.js', './js/secciones.js', './js/iconos.js', './js/ui.js', './js/ajustes.js', './js/datos.js', './js/color.js', './js/fondo.js', './js/imagenes.js', './js/perfil.js', './js/paneles.js', './js/graficos.js', './js/tipos.js', './js/agenda.js', './js/registro.js', './js/elena.js', './js/google.js', './js/widgets.js', './js/nutricion.js', './js/composicion.js', './js/finanzas-datos.js', './js/nube.js', './js/importar.js', './js/entrenos.js', './js/entrenos-vista.js', './js/vendor/supabase.min.js',
+  './js/app.js', './js/bienvenida.js', './js/celebrar.js', './js/correo.js', './js/avisos.js', './js/secciones.js', './js/iconos.js', './js/ui.js', './js/ajustes.js', './js/datos.js', './js/color.js', './js/fondo.js', './js/imagenes.js', './js/perfil.js', './js/paneles.js', './js/graficos.js', './js/tipos.js', './js/agenda.js', './js/registro.js', './js/elena.js', './js/google.js', './js/widgets.js', './js/nutricion.js', './js/composicion.js', './js/finanzas-datos.js', './js/nube.js', './js/importar.js', './js/entrenos.js', './js/entrenos-vista.js', './js/vendor/supabase.min.js',
   './js/secciones/inicio.js', './js/secciones/calendario.js', './js/secciones/fitness.js', './js/secciones/finanzas.js',
   './icons/icon-192.png', './icons/apple-touch-icon.png'
 ];
@@ -27,4 +27,24 @@ self.addEventListener('fetch', (e) => {
       .then((r) => { const c = r.clone(); caches.open(VERSION).then((ca) => ca.put(e.request, c)); return r; })
       .catch(() => caches.match(e.request).then((r) => r || caches.match('./index.html')))
   );
+});
+
+/* ---------- Notificaciones ---------- */
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { cuerpo: e.data?.text() }; }
+  e.waitUntil(self.registration.showNotification(d.titulo || "EVANGELISTA'S HUB", {
+    body: d.cuerpo || '', icon: './icons/icon-192.png', badge: './icons/icon-192.png',
+    tag: d.tag, renotify: !!d.tag, data: { url: d.url || './' },
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = e.notification.data?.url || './';
+  e.waitUntil((async () => {
+    const ventanas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const abierta = ventanas.find((c) => c.url.startsWith(self.registration.scope));
+    if (abierta) { await abierta.focus(); return abierta.navigate(url).catch(() => {}); }
+    return self.clients.openWindow(url);
+  })());
 });

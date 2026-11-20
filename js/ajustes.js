@@ -161,6 +161,11 @@ export function pintarPanel() {
       </div>
     </section>
 
+    <section class="grupo" id="grupo-avisos">
+      <p class="grupo-titulo">Notificaciones</p>
+      <div data-avisos-cuerpo><p class="nota">Cargando…</p></div>
+    </section>
+
     <section class="grupo">
       <p class="grupo-titulo">Entrada a la app</p>
       <div class="fila"><span class="etiqueta">Pedir ${/iPhone|iPad/.test(navigator.userAgent) ? 'Face ID' : 'Touch ID'}</span>${seg('bloqueo', [['true', 'Sí'], ['false', 'No']])}</div>
@@ -231,6 +236,46 @@ export function pintarPanel() {
 
   mostrarSubgrupos();
   sincronizarColor();
+  pintarAvisos(el.querySelector('[data-avisos-cuerpo]'));
+}
+
+/* ---------- Notificaciones ---------- */
+async function pintarAvisos(caja) {
+  const A = await import('./avisos.js');
+  const sop = A.soporte(), on = A.activadas(), P = A.preferencias();
+  const interruptor = (clave, texto) => `<div class="fila"><span class="etiqueta">${texto}</span><div class="segmentado" data-aviso-pref="${clave}"><button type="button" data-v="true" class="${P[clave] ? 'activo' : ''}">Sí</button><button type="button" data-v="false" class="${P[clave] ? '' : 'activo'}">No</button></div></div>`;
+  const hora = (clave, texto) => `<div class="fila"><label class="etiqueta" for="h-${clave}">${texto}</label><input class="campo" id="h-${clave}" type="time" value="${P[clave]}" data-aviso-hora="${clave}" style="max-width:130px"></div>`;
+  caja.innerHTML = sop === 'instalar'
+    ? '<p class="nota">En el iPhone las notificaciones solo funcionan con la app en la pantalla de inicio: en Safari pulsa Compartir → «Añadir a pantalla de inicio», abre la app desde ahí y vuelve aquí.</p>'
+    : sop === 'no' ? '<p class="nota">Este navegador no admite notificaciones.</p>'
+    : `<p class="nota" style="margin-top:0">${on ? 'Activadas en este dispositivo.' : 'Recibe avisos de exámenes, entregas y recordatorios aunque la app esté cerrada. Hay que activarlas en cada dispositivo.'}</p>
+      <div class="botones">${on ? '<button type="button" class="boton" data-probar-aviso>Enviar una de prueba</button><button type="button" class="boton" data-desactivar-aviso>Desactivar aquí</button>' : '<button type="button" class="boton primario" data-activar-aviso>Activar en este dispositivo</button>'}</div>
+      <div ${on ? '' : 'hidden'}>
+        ${interruptor('resumen', 'Resumen del día')}${hora('resumenHora', 'Hora del resumen')}
+        ${interruptor('vispera', 'Exámenes y entregas la víspera')}${hora('visperaHora', 'Hora del aviso de víspera')}
+        ${interruptor('eventos', 'Avisos de cada evento')}
+        <p class="nota">Los avisos de cada evento salen con la antelación que elijas al crearlo en Calendario.</p>
+      </div>
+      <p class="nota" data-aviso-msg></p>`;
+  const msg = (t) => { const m = caja.querySelector('[data-aviso-msg]'); if (m) m.textContent = t; };
+  const ocupado = (b, t) => { b.disabled = true; b.textContent = t; };
+  caja.querySelector('[data-activar-aviso]')?.addEventListener('click', async (e) => {
+    ocupado(e.target, 'Activando…');
+    try { await A.activar(); pintarAvisos(caja); } catch (err) { e.target.disabled = false; e.target.textContent = 'Activar en este dispositivo'; msg(err.message); }
+  });
+  caja.querySelector('[data-desactivar-aviso]')?.addEventListener('click', async (e) => { ocupado(e.target, 'Desactivando…'); await A.desactivar().catch(() => {}); pintarAvisos(caja); });
+  caja.querySelector('[data-probar-aviso]')?.addEventListener('click', async (e) => {
+    ocupado(e.target, 'Enviando…');
+    try { const r = await A.probar(); msg(r.enviados ? 'Enviada. Debería llegarte en unos segundos.' : 'No hay ningún dispositivo activado.'); }
+    catch (err) { msg(err.message); }
+    e.target.disabled = false; e.target.textContent = 'Enviar una de prueba';
+  });
+  caja.querySelectorAll('[data-aviso-pref]').forEach((g) => g.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    g.querySelectorAll('button').forEach((x) => x.classList.toggle('activo', x === b));
+    A.guardarPreferencias({ [g.dataset.avisoPref]: b.dataset.v === 'true' });
+  }));
+  caja.querySelectorAll('[data-aviso-hora]').forEach((i) => i.addEventListener('change', () => { if (i.value) A.guardarPreferencias({ [i.dataset.avisoHora]: i.value }); }));
 }
 
 function mostrarSubgrupos() {

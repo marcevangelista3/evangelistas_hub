@@ -220,7 +220,7 @@ function abrirEditor(ev = {}) {
         <div class="muestras">${COLORES.map((c) => `<button type="button" class="muestra c-${c} ${e.color === c ? 'activo' : ''}" style="background:var(--${c}-f)" data-color="${c}" aria-label="${c}"></button>`).join('')}</div></div>
       <div class="grupo"><p class="grupo-titulo">Avisos</p>
         <div class="chips">${AVISOS.map(([m, t]) => `<button type="button" class="chip-opcion ${e.avisos?.includes(m) ? 'activo' : ''}" data-aviso="${m}">${t}</button>`).join('')}</div>
-        <p class="nota">Los avisos llegarán como notificación cuando conectemos la cuenta.</p></div>
+        <p class="nota">Te llegan como notificación si las tienes activadas en Ajustes → Notificaciones.</p></div>
       <div class="grupo"><p class="grupo-titulo">Ubicación</p><input class="campo" name="lugar" value="${esc(e.lugar || '')}" placeholder="Dónde"></div>
       <div class="grupo"><p class="grupo-titulo">Descripción</p><textarea class="campo" name="descripcion" rows="3" placeholder="Notas, enlaces…">${esc(e.descripcion || '')}</textarea></div>
       <div class="botones">
