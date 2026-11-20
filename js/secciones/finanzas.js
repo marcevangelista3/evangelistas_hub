@@ -3,7 +3,8 @@ import { icono } from '../iconos.js';
 import { objetivos } from '../registro.js';
 import { leerArchivo, detectar, convertir, guardarMovimientos, movimientosGuardados, bajarMovimientos } from '../importar.js';
 import { usuarioActual } from '../nube.js';
-import { celebrar } from '../celebrar.js';
+import { celebrar, felicitar } from '../celebrar.js';
+import { estadoGuardado, hayBancos, saldoTotal, diasPermiso, estadoBancos, conectarBanco, desconectarBanco, sincronizarBancos } from '../bancos.js';
 import { contador, barras, donut, barraProgreso, animarNumeros } from '../graficos.js';
 import { MESES, MESES_LARGOS, CATEGORIAS, resumenMes, recomendaciones, usarMovimientos } from '../finanzas-datos.js';
 
@@ -14,15 +15,15 @@ let mesSel = ULT, ampliado = false, catAbierta = null, el;
 
 export function render(sub, contenedor) {
   el = contenedor;
-  document.getElementById('acciones-pagina').innerHTML = `<button class="boton primario" id="importar-extracto">${icono('finanzas')} Importar extracto</button>`;
-  document.getElementById('importar-extracto').onclick = abrirImportar;
+  pintarAcciones();
   mesSel = ULT; ampliado = false; catAbierta = null;
   const pintarReales = (lista, primera) => {
     if (!lista.length) {
       el.innerHTML = rejilla(tarjeta({ titulo: 'Aún no hay movimientos', icono: 'finanzas', color: 'melocoton', ancho: 'full',
         contenido: `<p class="cifra-sub" style="max-width:56ch">Descarga el extracto de Revolut (CSV) o de BBVA (Excel o CSV) e impórtalo. Se clasifica solo y, si has iniciado sesión, aparecerá también en tu otro dispositivo.</p>
-          <div class="botones" style="margin-top:14px"><button class="boton primario" data-importar>Importar extracto</button></div>` }));
+          <div class="botones" style="margin-top:14px"><button class="boton primario" data-importar>Importar extracto</button><button class="boton" data-bancos>Conectar bancos</button></div>` }));
       el.querySelector('[data-importar]').onclick = abrirImportar;
+      el.querySelector('[data-bancos]').onclick = abrirBancos;
       return;
     }
     usarMovimientos(lista); pintar(primera);
@@ -30,6 +31,73 @@ export function render(sub, contenedor) {
   const locales = movimientosGuardados();
   pintarReales(locales, true);
   if (usuarioActual()) bajarMovimientos().then((l) => { if (l.length !== locales.length && el.isConnected) pintarReales(l, false); }).catch(() => {});
+  // Bancos conectados: trae lo nuevo sin bloquear (el servidor lo limita a una vez cada 4 horas)
+  if (usuarioActual() && hayBancos()) sincronizarBancos().then(async (r) => {
+    if (el.isConnected) pintarAcciones();
+    if (r.nuevos) { const l = await bajarMovimientos(); if (el.isConnected && !document.querySelector('dialog[open]')) pintarReales(l, false); }
+  }).catch(() => {});
+}
+
+function pintarAcciones() {
+  const dias = diasPermiso();
+  const txt = !hayBancos() ? 'Conectar bancos' : dias !== null && dias <= 7 ? `⚠︎ Bancos · renovar en ${Math.max(0, dias)} d` : `● Bancos · ${eur(saldoTotal())}`;
+  document.getElementById('acciones-pagina').innerHTML = `<button class="boton" id="boton-bancos">${txt}</button><button class="boton primario" id="importar-extracto">${icono('finanzas')} Importar extracto</button>`;
+  document.getElementById('importar-extracto').onclick = abrirImportar;
+  document.getElementById('boton-bancos').onclick = abrirBancos;
+}
+
+/* ---------- Bancos conectados ---------- */
+const fDia = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long' });
+const fHora = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+async function abrirBancos() {
+  let dlg = document.getElementById('panel-bancos');
+  if (!dlg) {
+    dlg = document.createElement('dialog'); dlg.id = 'panel-bancos'; dlg.className = 'hoja cristal'; document.body.append(dlg);
+    dlg.addEventListener('click', (x) => { if (x.target === dlg || x.target.closest('[data-cerrar]')) dlg.close(); });
+  }
+  const pintarPanel = (d, msgTxt = '') => {
+    const sesion = !!usuarioActual(), lista = d?.bancos || [];
+    const tiene = (b) => lista.some((x) => x.banco === b);
+    dlg.innerHTML = `<div class="hoja-cabecera"><h2>Bancos</h2><button class="cerrar" data-cerrar aria-label="Cerrar">${icono('cerrar')}</button></div>
+      <div class="hoja-cuerpo">
+        ${!sesion ? '<p class="nota" style="margin-top:0"><b>Primero inicia sesión en Perfil.</b></p>'
+        : d && !d.configurado ? '<p class="nota" style="margin-top:0">Falta guardar la clave de Enable Banking en Supabase (Edge Functions → Secrets). Cuando esté, aquí podrás conectar Revolut y BBVA.</p>'
+        : `<p class="nota" style="margin-top:0">Los movimientos llegan solos al abrir Finanzas (como mucho cada 4 horas) y se clasifican igual que los importados. Es de solo lectura: la app no puede mover dinero. Los bancos piden renovar el permiso cada 90 días.</p>
+        ${lista.map((b) => {
+          const dias = Math.floor((new Date(b.valido_hasta) - Date.now()) / 86400000);
+          return `<section class="grupo banco-fila">
+            <p class="grupo-titulo">${esc(b.banco)}</p>
+            ${(b.saldos || []).map((s) => `<div class="fila-saldo"><span>${esc(s.nombre || s.iban || 'Cuenta')}</span><b>${s.importe.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${s.moneda === 'EUR' ? '€' : esc(s.moneda)}</b></div>`).join('') || `<p class="nota">${b.cuentas} ${b.cuentas === 1 ? 'cuenta' : 'cuentas'}</p>`}
+            <p class="nota">${dias < 0 ? '<b>El permiso ha caducado.</b>' : `Permiso hasta el ${fDia.format(new Date(b.valido_hasta))}${dias <= 7 ? ' · <b>renuévalo pronto</b>' : ''}`}${b.ultima ? ` · actualizado ${fHora.format(new Date(b.ultima))}` : ''}</p>
+            <div class="botones">${dias <= 7 ? `<button class="boton primario" data-con="${b.banco === 'BBVA' ? 'bbva' : 'revolut'}">Renovar</button>` : ''}<button class="boton peligro" data-desc="${b.id}">Desconectar</button></div>
+          </section>`;
+        }).join('')}
+        <div class="botones" style="margin-top:12px">
+          ${lista.length ? '<button class="boton" data-sinc>Actualizar ahora</button>' : ''}
+          ${tiene('Revolut') ? '' : '<button class="boton primario" data-con="revolut">Conectar Revolut</button>'}
+          ${tiene('BBVA') ? '' : '<button class="boton primario" data-con="bbva">Conectar BBVA</button>'}
+        </div>`}
+        <p class="nota" data-msg>${esc(msgTxt)}</p>
+      </div>`;
+    const msg = dlg.querySelector('[data-msg]');
+    const ocupado = (b, t) => { b.disabled = true; b.dataset.txt = b.textContent; b.textContent = t; };
+    const libre = (b) => { b.disabled = false; b.textContent = b.dataset.txt; };
+    dlg.querySelectorAll('[data-con]').forEach((b) => b.onclick = async () => { ocupado(b, 'Abriendo el banco…'); try { await conectarBanco(b.dataset.con); } catch (e) { msg.textContent = e.message; libre(b); } });
+    dlg.querySelectorAll('[data-desc]').forEach((b) => b.onclick = async () => { ocupado(b, 'Desconectando…'); try { pintarPanel(await desconectarBanco(b.dataset.desc)); pintarAcciones(); } catch (e) { msg.textContent = e.message; libre(b); } });
+    dlg.querySelector('[data-sinc]')?.addEventListener('click', async (ev) => {
+      ocupado(ev.target, 'Actualizando…');
+      try {
+        const r = await sincronizarBancos(true);
+        const l = await bajarMovimientos(); usarMovimientos(l);
+        pintarPanel(estadoGuardado(), r.errores?.length ? r.errores.join(' ') : r.nuevos ? '' : 'No hay movimientos nuevos.');
+        if (r.nuevos) { felicitar(`${r.nuevos} movimientos nuevos`); render(null, el); }
+        else pintarAcciones();
+      } catch (e) { msg.textContent = e.message; libre(ev.target); }
+    });
+  };
+  pintarPanel(estadoGuardado());
+  dlg.showModal();
+  if (usuarioActual()) estadoBancos().then((d) => { if (dlg.open) pintarPanel(d); pintarAcciones(); }).catch((e) => { if (dlg.open) dlg.querySelector('[data-msg]').textContent = e.message; });
 }
 
 /* ---------- Importar extracto ---------- */
