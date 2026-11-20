@@ -142,6 +142,7 @@ export function iniciarGoogle(alCambiarCuenta) {
     const repintar = (secciones) => { if (secciones.includes(ruta()) && !document.querySelector('dialog[open]') && !document.documentElement.classList.contains('bloqueado')) dispatchEvent(new Event('hub:recargar')); };
     try { if (await sincronizarGoogle()) repintar(['calendario', 'inicio']); } catch (e) { console.warn('Google:', e.message); }
     try { const { sincronizarCorreos } = await import('./correo.js'); if (await sincronizarCorreos()) repintar(['inicio']); } catch (e) { console.warn('Gmail:', e.message); }
+    try { const { sincronizarInstituto } = await import('./instituto.js'); if (await sincronizarInstituto()) repintar(['calendario', 'inicio']); } catch (e) { console.warn('Instituto:', e.message); }
   };
   let primera = true;
   const alEntrar = async (u) => {

@@ -8,6 +8,7 @@
 import { TIPOS_PRIORIDAD } from './tipos.js';
 import { iso, sumarDias } from './registro.js';
 import { eventosGoogle, marcarHechaGoogle, subirAGoogle } from './google.js';
+import { eventosInstituto, marcarHechaInstituto } from './instituto.js';
 
 const K = 'hub:eventos';
 const leer = () => { try { return JSON.parse(localStorage.getItem(K)) || []; } catch { return []; } };
@@ -16,8 +17,8 @@ const nuevoId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toSt
 const PESO = { alta: 0, media: 1, baja: 2 };
 
 export const esPrioridad = (e) => TIPOS_PRIORIDAD.includes(e.tipo) || e.importancia === 'alta';
-/** Eventos de la app más los de Google Calendar */
-export const eventos = () => [...leer(), ...eventosGoogle()];
+/** Eventos de la app, de Google Calendar y del calendario del instituto */
+export const eventos = () => [...leer(), ...eventosGoogle(), ...eventosInstituto()];
 
 export function prioridades(fecha = iso()) {
   const desde = iso(sumarDias(new Date(), -7));
@@ -29,6 +30,7 @@ export function prioridades(fecha = iso()) {
 
 export function marcarHecha(id, hecha) {
   if (String(id).startsWith('g:')) return marcarHechaGoogle(id.slice(2), hecha);
+  if (String(id).startsWith('i:')) return marcarHechaInstituto(id.slice(2), hecha);
   escribir(leer().map((e) => (e.id === id ? { ...e, hecha } : e)));
 }
 

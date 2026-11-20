@@ -12,7 +12,8 @@ import { datos } from '../datos.js';
 import { TIPOS } from '../tipos.js';
 import { eventosGoogle, conectadoGoogle, estadoGoogle, conectarGoogle, desconectarGoogle, sincronizarGoogle, subirAGoogle, actualizarEnGoogle, borrarEnGoogle } from '../google.js';
 import { usuarioActual } from '../nube.js';
-import { celebrar } from '../celebrar.js';
+import { eventosInstituto, conectadoInstituto, confInstituto, conectarInstituto, desconectarInstituto, sincronizarInstituto, marcarHechaInstituto } from '../instituto.js';
+import { celebrar, felicitar } from '../celebrar.js';
 
 const H_INI = 7, H_FIN = 24, ALTO = 48;
 const COLORES = ['cielo', 'lavanda', 'menta', 'melocoton', 'rosa', 'limon'];
@@ -32,18 +33,21 @@ let el, eventos = [];
 
 async function cargarEventos() {
   const propios = await datos.listar('eventos');
-  eventos = [...propios.map((p) => ({ ...p, id: p.ref || p.id, _propio: p.id })), ...eventosGoogle()];
+  eventos = [...propios.map((p) => ({ ...p, id: p.ref || p.id, _propio: p.id })), ...eventosGoogle(), ...eventosInstituto()];
 }
 
 export async function render(sub, contenedor) {
   el = contenedor;
   await cargarEventos();
-  document.getElementById('acciones-pagina').innerHTML = `<button class="boton" id="boton-google">${conectadoGoogle() ? '● Google Calendar' : 'Conectar Google Calendar'}</button><button class="boton primario" id="nuevo-evento">${icono('calendario')} Nuevo evento</button>`;
+  document.getElementById('acciones-pagina').innerHTML = `<button class="boton" id="boton-instituto">${conectadoInstituto() ? '● Instituto' : 'Calendario del instituto'}</button><button class="boton" id="boton-google">${conectadoGoogle() ? '● Google Calendar' : 'Conectar Google Calendar'}</button><button class="boton primario" id="nuevo-evento">${icono('calendario')} Nuevo evento</button>`;
   document.getElementById('nuevo-evento').onclick = () => abrirEditor({ fecha: iso(estado.fecha), ini: '10:00', fin: '11:00' });
   document.getElementById('boton-google').onclick = abrirGoogle;
+  document.getElementById('boton-instituto').onclick = abrirInstituto;
   pintar();
   // Trae lo último de Google sin bloquear
-  sincronizarGoogle().then(async (cambio) => { if (cambio && el.isConnected && !document.querySelector('dialog[open]')) { await cargarEventos(); pintar(); } }).catch(() => {});
+  const repintar = async (cambio) => { if (cambio && el.isConnected && !document.querySelector('dialog[open]')) { await cargarEventos(); pintar(); } };
+  sincronizarGoogle().then(repintar).catch(() => {});
+  sincronizarInstituto().then(repintar).catch(() => {});
 }
 
 /* ---------- Rango de la vista ---------- */
@@ -178,7 +182,7 @@ function conectar() {
     else estado.fecha = new Date(f.getFullYear(), f.getMonth() + n, 1);
     pintar();
   });
-  el.querySelectorAll('[data-ev]').forEach((x) => x.onclick = (e) => { e.stopPropagation(); abrirEditor(eventos.find((v) => v.id === x.dataset.ev)); });
+  el.querySelectorAll('[data-ev]').forEach((x) => x.onclick = (e) => { e.stopPropagation(); const v = eventos.find((v) => v.id === x.dataset.ev); v?._instituto ? verInstituto(v) : abrirEditor(v); });
   // Clic en una hora libre: nuevo evento a esa hora
   el.querySelectorAll('.dia-col').forEach((c) => c.onclick = (e) => {
     const y = e.clientY - c.getBoundingClientRect().top;
@@ -300,3 +304,62 @@ function abrirGoogle() {
   dlg.querySelector('[data-desc]')?.addEventListener('click', async (ev) => { ocupado(ev.target, 'Desconectando…'); try { await desconectarGoogle(); } catch {} dlg.close(); dispatchEvent(new Event('hub:recargar')); });
   dlg.showModal();
 }
+
+/* ---------- Calendario del instituto (iCal, solo lectura) ---------- */
+function hojaSimple(id) {
+  let dlg = document.getElementById(id);
+  if (!dlg) {
+    dlg = document.createElement('dialog'); dlg.id = id; dlg.className = 'hoja cristal'; document.body.append(dlg);
+    dlg.addEventListener('click', (x) => { if (x.target === dlg || x.target.closest('[data-cerrar]')) dlg.close(); });
+  }
+  return dlg;
+}
+
+function verInstituto(e) {
+  const dlg = hojaSimple('panel-ev-instituto');
+  const cuando = cap(fmt({ weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(e.fecha + 'T12:00'))) + (e.limite ? ` · hasta las ${e.limite}` : e.todoElDia || !e.ini ? '' : ` · ${e.ini}${e.fin ? ` – ${e.fin}` : ''}`);
+  dlg.innerHTML = `<div class="hoja-cabecera"><h2>${esc(e.titulo)}</h2><button class="cerrar" data-cerrar aria-label="Cerrar">${icono('cerrar')}</button></div>
+    <div class="hoja-cuerpo">
+      <p class="nota" style="margin-top:0"><b>${esc(TIPOS[e.tipo]?.nombre || 'Evento')}</b> · ${esc(cuando)}${e.lugar ? `<br>${esc(e.lugar)}` : ''}</p>
+      ${e.descripcion ? `<p class="nota" style="white-space:pre-line">${esc(e.descripcion)}</p>` : ''}
+      <label class="fila"><input type="checkbox" data-hecha ${e.hecha ? 'checked' : ''}> Hecho</label>
+      <p class="nota">Viene del calendario del instituto. Para cambiarlo, hazlo en el aula virtual.</p>
+    </div>`;
+  dlg.querySelector('[data-hecha]').addEventListener('change', async (x) => {
+    marcarHechaInstituto(e.id.slice(2), x.target.checked);
+    if (x.target.checked) celebrar(x.target, 'pequeno');
+    await cargarEventos(); pintar();
+  });
+  dlg.showModal();
+}
+
+function abrirInstituto() {
+  const dlg = hojaSimple('panel-instituto');
+  const c = confInstituto(), sesion = !!usuarioActual();
+  dlg.innerHTML = `<div class="hoja-cabecera"><h2>Calendario del instituto</h2><button class="cerrar" data-cerrar aria-label="Cerrar">${icono('cerrar')}</button></div>
+    <div class="hoja-cuerpo">
+      ${c?.url ? `<p class="nota" style="margin-top:0">Conectado a <b>${esc(c.nombre || 'Instituto')}</b>. Las entregas, exámenes y clases del aula virtual salen aquí, en Próximos eventos y, si son entregas o exámenes, en Prioridades de hoy. Se actualiza solo cada vez que abres la app.</p>
+        <div class="botones"><button class="boton primario" data-sinc>Actualizar ahora</button><button class="boton peligro" data-desc>Desconectar</button></div>`
+      : `<p class="nota" style="margin-top:0">Pega el enlace de exportación del calendario de tu aula virtual. En Moodle: <b>Calendario → Exportar calendario</b>, elige «Todos los cursos» y «Eventos recientes y próximos», pulsa <b>Obtener URL del calendario</b> y cópiala.</p>
+        ${sesion ? `<input class="campo" data-url type="url" inputmode="url" placeholder="https://…/calendar/export_execute.php?…" autocomplete="off">
+        <div class="botones"><button class="boton primario" data-con>Conectar</button></div>` : '<p class="nota"><b>Primero inicia sesión en Perfil.</b></p>'}`}
+      <p class="nota" data-msg></p>
+    </div>`;
+  const msg = dlg.querySelector('[data-msg]');
+  const ocupado = (b, t) => { b.disabled = true; b.dataset.txt = b.textContent; b.textContent = t; };
+  const libre = (b) => { b.disabled = false; b.textContent = b.dataset.txt; };
+  dlg.querySelector('[data-con]')?.addEventListener('click', async (ev) => {
+    const url = dlg.querySelector('[data-url]').value.trim();
+    if (!url) { msg.textContent = 'Pega primero el enlace.'; return; }
+    ocupado(ev.target, 'Conectando…');
+    try { const n = await conectarInstituto(url); dlg.close(); await render(null, el); felicitar(`Instituto conectado: ${n} ${n === 1 ? 'evento' : 'eventos'}`); }
+    catch (err) { msg.textContent = err.message; libre(ev.target); }
+  });
+  dlg.querySelector('[data-sinc]')?.addEventListener('click', async (ev) => {
+    ocupado(ev.target, 'Actualizando…');
+    try { await sincronizarInstituto(); dlg.close(); await cargarEventos(); pintar(); } catch (err) { msg.textContent = err.message; libre(ev.target); }
+  });
+  dlg.querySelector('[data-desc]')?.addEventListener('click', async () => { desconectarInstituto(); dlg.close(); await render(null, el); });
+  dlg.showModal();
+}
+
