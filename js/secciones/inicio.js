@@ -10,6 +10,8 @@ import { TIPOS } from '../tipos.js';
 import { movimientosGuardados } from '../importar.js';
 import * as E from '../entrenos.js';
 import { aplicarWidgets, modoEdicion } from '../widgets.js';
+import { conectadoGoogle } from '../google.js';
+import { gmailActivo, importantes, correos, enlaceGmail, conectarGmail } from '../correo.js';
 
 const TAM = { prioridades: 'xl', eventos: 'm', vistazo: 'm', finanzas: 'm', fitness: 'm', emails: 'full' };
 const COLOR_IMP = { alta: 'var(--rosa-f)', media: 'var(--melocoton-f)', baja: 'var(--menta-f)' };
@@ -45,6 +47,17 @@ function conectar(el) {
     }
     el.querySelector('#tareas-hechas').textContent = `${lista.filter((p) => p.hecha).length} de ${lista.length} hechas`;
   }));
+  el.querySelector('#conectar-gmail')?.addEventListener('click', async (ev) => {
+    ev.target.disabled = true; ev.target.textContent = 'Abriendo Google…';
+    try { await conectarGmail(); } catch (err) { ev.target.disabled = false; ev.target.textContent = 'Conectar Gmail'; el.querySelector('#msg-gmail').textContent = err.message; }
+  });
+  el.querySelector('#correos-elena')?.addEventListener('click', () => {
+    document.getElementById('abrir-ia').click();
+    let n = 0; const t = setInterval(() => {
+      const form = document.querySelector('#ia-cuerpo form');
+      if (form?.q || ++n > 30) { clearInterval(t); if (form?.q) { form.q.value = '¿Qué correos importantes tengo que contestar o tienen alguna fecha?'; form.requestSubmit(); } }
+    }, 100);
+  });
   const f = el.querySelector('#nueva-prioridad');
   if (f) f.onsubmit = (e) => {
     e.preventDefault();
@@ -128,6 +141,30 @@ function htmlFitness(T, O) {
     <div class="tarjeta-pie"><span>Racha de <b>${actual} ${actual === 1 ? 'día' : 'días'}</b></span><span>${hecho ? `Hecho: ${esc(hecho.nombre)}` : hoy ? `Hoy toca: ${esc(hoy.nombre)}` : E.rutinas().length ? 'Hoy: descanso' : '<a class="enlace" href="#fitness-ejercicios">Crea tu primer entreno</a>'}</span></div>`;
 }
 
+function haceCuanto(ms) {
+  const min = Math.round((Date.now() - ms) / 60000);
+  if (min < 60) return `hace ${Math.max(1, min)} min`;
+  const h = Math.round(min / 60); if (h < 24) return `hace ${h} h`;
+  const d = Math.round(h / 24); return d === 1 ? 'ayer' : `hace ${d} días`;
+}
+function htmlCorreos() {
+  if (!gmailActivo()) {
+    return `<p class="vacio-inicio">${conectadoGoogle() ? 'Google ya está conectado, pero falta el permiso para leer tu Gmail.' : 'Conecta tu Gmail y aquí verás los correos importantes sin leer. La app solo los lee: nunca envía ni borra nada.'}</p>
+      <div class="botones"><button class="boton primario" id="conectar-gmail">${conectadoGoogle() ? 'Dar permiso a Gmail' : 'Conectar Gmail'}</button></div>
+      <p class="nota" id="msg-gmail">Google avisará de que la app no está verificada: «Configuración avanzada» → «Ir a EVANGELISTA'S HUB».</p>`;
+  }
+  const lista = importantes(6), sinLeer = correos().filter((c) => c.noLeido).length;
+  if (!lista.length) return '<p class="vacio-inicio">Nada importante sin leer en tu bandeja principal. 🎉</p>';
+  return `<ul class="lista-correos">${lista.map((c, j) => `
+      <li style="--j:${j}"><a href="${enlaceGmail(c)}" target="_blank" rel="noopener" class="${c.noLeido ? 'no-leido' : ''}">
+        <span class="correo-avatar">${esc((c.de || '?').trim().charAt(0).toUpperCase())}</span>
+        <span class="correo-texto"><span class="correo-linea"><b>${esc(c.de)}</b><small>${haceCuanto(c.fecha)}</small></span>
+          <span class="correo-asunto">${c.destacado ? '★ ' : ''}${esc(c.asunto)}</span>
+          <span class="correo-frag">${esc(c.fragmento)}</span></span>
+      </a></li>`).join('')}</ul>
+    <div class="tarjeta-pie"><span>${sinLeer} sin leer en los últimos 10 días</span><button class="enlace" id="correos-elena">Pregúntale a Elena qué contestar</button></div>`;
+}
+
 function pagina() {
   const T = totalesDia(), O = objetivos(), F = resumenFinanzas();
   const lista = prioridades(), hechas = lista.filter((p) => p.hecha).length;
@@ -139,7 +176,7 @@ function pagina() {
       <div class="anillo-item">${anillo(F.ingresos ? (F.gastos / F.ingresos) * 100 : 0, { texto: F.ingresos ? `${Math.round((F.gastos / F.ingresos) * 100)} %` : '–', sub: 'gastado', color: 'var(--cielo-f)', i: 2 })}Presupuesto</div>
     </div>`;
 
-  const emails = '<p class="vacio-inicio">Todavía no está conectado a tu correo. Cuando conectemos Gmail aparecerán aquí los correos que necesitan respuesta.</p>';
+  const emails = htmlCorreos();
 
   return rejilla(
     tarjeta({ id: 'prioridades', titulo: 'Prioridades de hoy', icono: 'tareas', color: 'lavanda', ancho: '2', contenido: htmlPrioridades(), extra: verMas('#calendario', 'Calendario') }),

@@ -129,3 +129,19 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 
 @keyframes latido { 50% { transform: scale(1.08); } }
 a.boton { text-decoration: none; }
 .aviso-flotante { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 50; padding: 12px 18px; border-radius: 16px; font-size: .9rem; font-weight: 600; max-width: calc(100% - 32px); animation: entrar .4s var(--curva) both; }
+
+/* ---------- Correos en Inicio ---------- */
+.lista-correos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lista-correos li { animation: entrar .5s var(--curva) both; animation-delay: calc(200ms + var(--j, 0) * 50ms); }
+.lista-correos a { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border-radius: 14px; color: inherit; text-decoration: none; transition: background .2s; }
+.lista-correos a:hover { background: var(--brillo); }
+.correo-avatar { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-family: var(--f-titulo); background: var(--rosa); color: var(--rosa-f); }
+.correo-texto { min-width: 0; flex: 1; display: grid; gap: 1px; }
+.correo-linea { display: flex; justify-content: space-between; gap: 8px; }
+.correo-linea b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.correo-linea small { color: var(--tenue); white-space: nowrap; }
+.correo-asunto, .correo-frag { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.correo-frag { color: var(--suave); font-size: .86rem; }
+.no-leido .correo-linea b, .no-leido .correo-asunto { font-weight: 800; }
+.no-leido .correo-avatar { box-shadow: 0 0 0 2px var(--rosa-f); }
+.tarjeta-pie button.enlace { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }

@@ -99,7 +99,7 @@ export async function pintarIA() {
     <div class="chat">
       <div class="burbuja claude">${conectado ? 'Hola, soy Elena. Cuéntame tu día: lo que has comido, si has entrenado, qué tienes que entregar… y lo apunto donde toca. También puedes preguntarme por tus datos.' : 'Hola, soy Elena. Inicia sesión en Perfil para hablar conmigo.'}</div>
       ${conversacion.map((m, i) => htmlMensaje(m, i, E)).join('')}
-      ${conectado && !conversacion.length ? `<div class="chips elena-sugerencias">${SUGERENCIAS.map((t) => `<button type="button" class="chip-opcion" data-sugerencia>${esc(t)}</button>`).join('')}</div>` : ''}
+      ${conectado && !conversacion.length ? `<div class="chips elena-sugerencias">${[...SUGERENCIAS, ...((await import('./correo.js')).gmailActivo() ? ['¿Qué correos tengo que contestar?'] : [])].map((t) => `<button type="button" class="chip-opcion" data-sugerencia>${esc(t)}</button>`).join('')}</div>` : ''}
     </div>
     <form class="chat-entrada">
       ${voz ? `<button type="button" class="boton boton-icono ${escuchando ? 'escuchando' : ''}" data-voz ${conectado ? '' : 'disabled'} aria-label="Hablar">${icono('micro')}</button>` : ''}

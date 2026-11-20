@@ -79,14 +79,14 @@ export function marcarHechaGoogle(id, hecha) {
 }
 
 /* ---------- Acciones ---------- */
-export async function conectarGoogle() {
-  const { url } = await llamar('url', { volver: location.origin + location.pathname });
+export async function conectarGoogle(ir = 'calendario') {
+  const { url } = await llamar('url', { volver: location.origin + location.pathname, ir });
   location.href = url;
 }
 export async function desconectarGoogle() {
   await llamar('desconectar');
   escribir(K.estado, { conectado: false });
-  try { localStorage.removeItem(K.cache); } catch {}
+  try { localStorage.removeItem(K.cache); localStorage.removeItem('hub:correos'); } catch {}
 }
 export async function comprobarGoogle() {
   const d = await llamar('estado');
@@ -138,19 +138,17 @@ export function iniciarGoogle(alCambiarCuenta) {
   const vuelta = q.get('google');
   if (vuelta) history.replaceState(null, '', location.pathname + location.hash);
   const refrescar = async () => {
-    try {
-      if (await sincronizarGoogle()) {
-        const ruta = location.hash.replace(/^#\/?/, '').split(/[/-]/)[0] || 'inicio';
-        if (['calendario', 'inicio'].includes(ruta) && !document.querySelector('dialog[open]')) dispatchEvent(new Event('hub:recargar'));
-      }
-    } catch (e) { console.warn('Google:', e.message); }
+    const ruta = () => location.hash.replace(/^#\/?/, '').split(/[/-]/)[0] || 'inicio';
+    const repintar = (secciones) => { if (secciones.includes(ruta()) && !document.querySelector('dialog[open]') && !document.documentElement.classList.contains('bloqueado')) dispatchEvent(new Event('hub:recargar')); };
+    try { if (await sincronizarGoogle()) repintar(['calendario', 'inicio']); } catch (e) { console.warn('Google:', e.message); }
+    try { const { sincronizarCorreos } = await import('./correo.js'); if (await sincronizarCorreos()) repintar(['inicio']); } catch (e) { console.warn('Gmail:', e.message); }
   };
   let primera = true;
   const alEntrar = async (u) => {
     if (!u || !primera) return;
     primera = false;
     if (vuelta === 'ok') {
-      try { await comprobarGoogle(); aviso('Google Calendar conectado. Trayendo tus eventos…'); } catch (e) { aviso(e.message); }
+      try { const d = await comprobarGoogle(); aviso(d.gmail ? 'Google conectado: trayendo tus eventos y tus correos…' : 'Google Calendar conectado. Trayendo tus eventos…'); } catch (e) { aviso(e.message); }
     } else if (vuelta === 'error') aviso('Google no ha dado permiso. Prueba otra vez desde Calendario.');
     if (vuelta && vuelta !== 'ok') return;
     refrescar();
