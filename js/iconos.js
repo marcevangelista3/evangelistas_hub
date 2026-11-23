@@ -5,6 +5,7 @@ const T = {
   fitness: '<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>',
   finanzas: '<path d="M6 6V5a2 2 0 0 1 2-2h9"/><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M15 13h3"/>',
   ajustes: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+  notas: '<path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11"/><path d="M21.5 9v5"/>',
   tareas: '<path d="m4 12 5 5L20 6"/>',
   correo: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/>',
   grafico: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',

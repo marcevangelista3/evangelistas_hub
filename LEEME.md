@@ -30,6 +30,7 @@ js/composicion.js     Estimación de grasa (Marina EE. UU.), músculo (Lee) y ag
 js/finanzas-datos.js  Categorías, reglas de clasificación, meses (demo o reales) y recomendaciones
 js/entrenos.js        Rutinas, entreno de hoy, sesión en curso, historial y marcas
 js/entrenos-vista.js  Pestaña Ejercicios: registro de series, descanso y editor de entrenos
+js/notas.js          Notas: Moodle (copia local), porcentajes y notas a mano (hub:notas), media ponderada
 js/importar.js        Importar extractos de Revolut (CSV) y BBVA (Excel/CSV) sin duplicados
 js/nube.js            Supabase: cuenta (Google o enlace por correo) y sincronización de hub:*
 js/vendor/            supabase-js 2.45.4 empaquetado y SheetJS 0.18.5 (sin CDN)
@@ -59,3 +60,10 @@ Abre `http://localhost:8000`.
 - Función `ia`: asistente con la API gratuita de Gemini. Necesita el secreto `GEMINI_API_KEY` (opcional `GEMINI_MODEL`).
 - Para entrar hace falta poner la URL de la app en Authentication › URL Configuration (Site URL y Redirect URLs).
 - Google: Authentication › Providers › Google, con un cliente OAuth gratuito de Google Cloud.
+
+## Notas (Moodle)
+
+- Función `moodle`: usa el servicio de la app móvil de Moodle (`moodle_mobile_app`). La contraseña solo sirve para pedir el token y no se guarda.
+- Tablas `moodle_conexion` (token por usuario) y `moodle_notas`, con RLS y sin políticas: solo las lee el servidor.
+- pg_cron `hub-moodle` cada 15 minutos: baja las notas de todos y avisa por push de las nuevas (preferencia `notas` en hub:avisos).
+- Campus por defecto: https://campus.digitechfp.com (se puede cambiar al conectar).

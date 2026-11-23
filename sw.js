@@ -1,11 +1,11 @@
 // Service worker: guarda la app para que abra sin conexión.
 // Sube VERSION cada vez que cambies archivos.
-const VERSION = 'hub-v26';
+const VERSION = 'hub-v27';
 const ARCHIVOS = [
   './', './index.html', './manifest.json',
-  './css/tema.css', './css/estructura.css', './css/paneles.css', './css/movimiento.css', './css/graficos.css', './css/bienvenida.css',
-  './js/app.js', './js/bienvenida.js', './js/celebrar.js', './js/correo.js', './js/avisos.js', './js/instituto.js', './js/bancos.js', './js/secciones.js', './js/iconos.js', './js/ui.js', './js/ajustes.js', './js/datos.js', './js/color.js', './js/fondo.js', './js/imagenes.js', './js/perfil.js', './js/paneles.js', './js/graficos.js', './js/tipos.js', './js/agenda.js', './js/registro.js', './js/elena.js', './js/google.js', './js/widgets.js', './js/nutricion.js', './js/composicion.js', './js/finanzas-datos.js', './js/nube.js', './js/importar.js', './js/entrenos.js', './js/entrenos-vista.js', './js/vendor/supabase.min.js',
-  './js/secciones/inicio.js', './js/secciones/calendario.js', './js/secciones/fitness.js', './js/secciones/finanzas.js',
+  './css/tema.css', './css/estructura.css', './css/paneles.css', './css/movimiento.css', './css/graficos.css', './css/bienvenida.css', './css/notas.css',
+  './js/app.js', './js/bienvenida.js', './js/celebrar.js', './js/correo.js', './js/avisos.js', './js/instituto.js', './js/bancos.js', './js/notas.js', './js/secciones.js', './js/iconos.js', './js/ui.js', './js/ajustes.js', './js/datos.js', './js/color.js', './js/fondo.js', './js/imagenes.js', './js/perfil.js', './js/paneles.js', './js/graficos.js', './js/tipos.js', './js/agenda.js', './js/registro.js', './js/elena.js', './js/google.js', './js/widgets.js', './js/nutricion.js', './js/composicion.js', './js/finanzas-datos.js', './js/nube.js', './js/importar.js', './js/entrenos.js', './js/entrenos-vista.js', './js/vendor/supabase.min.js',
+  './js/secciones/inicio.js', './js/secciones/calendario.js', './js/secciones/fitness.js', './js/secciones/finanzas.js', './js/secciones/notas.js',
   './icons/icon-192.png', './icons/apple-touch-icon.png'
 ];
 

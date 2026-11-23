@@ -9,7 +9,7 @@
    ========================================================= */
 const PREFS = 'hub:avisos';
 const LOCAL = 'hub-local:push';   // endpoint de este dispositivo (no se sincroniza)
-const PREDET = { resumen: true, resumenHora: '08:00', vispera: true, visperaHora: '20:00', eventos: true };
+const PREDET = { resumen: true, resumenHora: '08:00', vispera: true, visperaHora: '20:00', eventos: true, notas: true };
 
 const leer = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
 export const preferencias = () => ({ ...PREDET, ...leer(PREFS, {}) });

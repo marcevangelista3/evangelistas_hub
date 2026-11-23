@@ -14,7 +14,7 @@ export const SUPABASE_CLAVE = 'sb_publishable_7kTN6JzxhFy2DWa9E8jcAQ_W7WYAXH7';
 const CDN = './vendor/supabase.min.js'; // supabase-js 2.45.4 empaquetado
 
 // Claves que no se sincronizan (propias de cada dispositivo o de la demo)
-const LOCALES = ['hub:cal-vista', 'hub:fondo-foto', 'hub:meta-sync', 'hub:movimientos', 'hub:google-eventos', 'hub:correos', 'hub:correos-outlook', 'hub:ical-eventos', 'hub:bancos-estado'];
+const LOCALES = ['hub:cal-vista', 'hub:fondo-foto', 'hub:meta-sync', 'hub:movimientos', 'hub:google-eventos', 'hub:correos', 'hub:correos-outlook', 'hub:ical-eventos', 'hub:bancos-estado', 'hub:notas-moodle'];
 const sincronizable = (k) => typeof k === 'string' && k.startsWith('hub:') && !LOCALES.includes(k) && !k.endsWith('-demo');
 
 /* ---------- Marcas de tiempo locales ---------- */

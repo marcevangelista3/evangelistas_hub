@@ -1,0 +1,50 @@
+/* Sección Notas */
+.nt-nota { min-width: 46px; text-align: center; font: 700 .95rem var(--f-titulo); padding: 5px 10px; border-radius: 12px; flex: none; }
+.nt-nota.bien { background: var(--menta); color: var(--menta-f); }
+.nt-nota.med { background: var(--limon); color: var(--limon-f); }
+.nt-nota.mal { background: var(--rosa); color: var(--rosa-f); }
+.nt-nota.pend { background: transparent; border: 1px dashed var(--linea); color: var(--tenue); font-weight: 600; font-size: .78rem; }
+.nt-grupo { margin-top: 10px; }
+.nt-grupo-t { display: flex; justify-content: space-between; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tenue); margin: 0 2px 6px; }
+.nt-fila { display: flex; width: 100%; align-items: center; gap: 10px; padding: 8px 2px; border: 0; border-top: 1px solid var(--linea); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 0; }
+.nt-grupo-t + .nt-fila { border-top: 0; }
+.nt-fila:hover .nt-nom { color: var(--acento-f); }
+.nt-fila .nt-nom { flex: 1; min-width: 0; font-weight: 600; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .2s; }
+.nt-fila .nt-peso { font-size: .75rem; color: var(--tenue); font-variant-numeric: tabular-nums; }
+.nt-fila.nt-oculta { opacity: .45; } .nt-fila.nt-oculta .nt-nom { text-decoration: line-through; }
+.nt-nueva { font-size: .62rem; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--cielo); color: var(--cielo-f); margin-left: 6px; vertical-align: 2px; }
+.nt-media { font: 800 1.5rem var(--f-titulo); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.nt-media.grande { font-size: 2.5rem; }
+.nt-barra { height: 6px; border-radius: 9px; background: var(--linea); overflow: hidden; margin: 12px 0 6px; }
+.nt-barra i { display: block; height: 100%; border-radius: 9px; transition: width .6s cubic-bezier(.2, .8, .2, 1); }
+.nt-pie { display: flex; justify-content: space-between; gap: 10px; font-size: .78rem; color: var(--suave); }
+.nt-pie b { color: var(--texto); }
+.nt-asig-cab { display: flex; width: 100%; align-items: baseline; justify-content: space-between; gap: 12px; border: 0; background: none; color: inherit; padding: 0; text-align: left; cursor: pointer; font: inherit; }
+.nt-asig-cab h3 { margin: 0; font: 700 1.02rem var(--f-titulo); }
+.nt-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+.nt-resumen { display: flex; flex-direction: column; gap: 2px; }
+.nt-ult { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.nt-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.nt-selector { margin-bottom: 16px; }
+.nt-rango { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.nt-rango label { flex: 1; font-weight: 700; }
+.nt-rango input[type=range] { flex: 2; accent-color: var(--acento-m); }
+.nt-rango output { min-width: 52px; text-align: right; font: 800 1.05rem var(--f-titulo); }
+.nt-pct { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--linea); }
+.tarjeta-cabecera + .nt-pct { border-top: 0; }
+.nt-pct span { flex: 1; font-size: .9rem; font-weight: 600; }
+.nt-pct small { color: var(--tenue); font-size: .75rem; font-weight: 500; }
+.nt-pct input { width: 70px; text-align: right; padding: 6px 8px; border-radius: 10px; border: 1px solid var(--linea); background: var(--cristal-fuerte); color: var(--texto); font: 600 .9rem var(--f-cuerpo); }
+.nt-ok { font-size: .8rem; font-weight: 700; color: var(--menta-f); white-space: nowrap; }
+.nt-ko { font-size: .8rem; font-weight: 700; color: var(--rosa-f); white-space: nowrap; }
+.nt-obj { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.nt-pie-seccion { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+.nt-color input { position: absolute; opacity: 0; pointer-events: none; }
+.nt-color i { display: block; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; box-shadow: 0 0 0 1px var(--linea); transition: transform .2s; }
+.nt-color input:checked + i { border-color: var(--cristal-fuerte); box-shadow: 0 0 0 2px var(--texto); transform: scale(1.08); }
+@media (max-width: 760px) {
+  .nt-selector { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px 16px; padding: 0 16px 2px; scrollbar-width: none; }
+  .nt-selector::-webkit-scrollbar { display: none; }
+  .nt-selector .chip-opcion { white-space: nowrap; }
+  .nt-media.grande { font-size: 2.2rem; }
+}

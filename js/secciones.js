@@ -34,6 +34,13 @@ export const SECCIONES = [
     ],
   },
   {
+    id: 'notas',
+    nombre: 'Notas',
+    icono: 'notas',
+    color: 'rosa',
+    subapartados: [{ id: 'notas', nombre: 'Notas' }, { id: 'porcentajes', nombre: 'Porcentajes' }],
+  },
+  {
     id: 'finanzas',
     nombre: 'Finanzas',
     icono: 'finanzas',

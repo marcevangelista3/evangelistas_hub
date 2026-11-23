@@ -305,6 +305,7 @@ async function pintarAvisos(caja) {
         ${interruptor('resumen', 'Resumen del día')}${hora('resumenHora', 'Hora del resumen')}
         ${interruptor('vispera', 'Exámenes y entregas la víspera')}${hora('visperaHora', 'Hora del aviso de víspera')}
         ${interruptor('eventos', 'Avisos de cada evento')}
+        ${interruptor('notas', 'Notas nuevas de Moodle')}
         <p class="nota">Los avisos de cada evento salen con la antelación que elijas al crearlo en Calendario.</p>
       </div>
       <p class="nota" data-aviso-msg></p>`;
