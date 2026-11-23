@@ -7,7 +7,7 @@
 .nt-grupo { margin-top: 10px; }
 .nt-grupo-t { display: flex; justify-content: space-between; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tenue); margin: 0 2px 6px; }
 .nt-fila { display: flex; width: 100%; align-items: center; gap: 10px; padding: 8px 2px; border: 0; border-top: 1px solid var(--linea); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 0; }
-.nt-grupo-t + .nt-fila { border-top: 0; }
+.nt-filas > .nt-fila:first-child { border-top: 0; }
 .nt-fila:hover .nt-nom { color: var(--acento-f); }
 .nt-fila .nt-nom { flex: 1; min-width: 0; font-weight: 600; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .2s; }
 .nt-fila .nt-peso { font-size: .75rem; color: var(--tenue); font-variant-numeric: tabular-nums; }
@@ -20,7 +20,23 @@
 .nt-barra i { display: block; height: 100%; border-radius: 9px; transition: width .6s cubic-bezier(.2, .8, .2, 1); }
 .nt-pie { display: flex; justify-content: space-between; gap: 10px; font-size: .78rem; color: var(--suave); }
 .nt-pie b { color: var(--texto); }
-.nt-asig-cab { display: flex; width: 100%; align-items: baseline; justify-content: space-between; gap: 12px; border: 0; background: none; color: inherit; padding: 0; text-align: left; cursor: pointer; font: inherit; }
+.nt-asig-cab { display: flex; width: 100%; align-items: center; gap: 10px; }
+.nt-asig-plegar { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; border: 0; background: none; color: inherit; padding: 4px 0; text-align: left; cursor: pointer; font: inherit; }
+.nt-asig-plegar h3 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nt-editar { flex: none; width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--linea); background: var(--cristal); color: var(--suave); font-weight: 800; cursor: pointer; line-height: 1; }
+.nt-flecha { width: 16px; height: 16px; flex: none; color: var(--tenue); transition: transform .25s ease; }
+.plegada > .nt-asig-cab .nt-flecha, .nt-grupo.plegada .nt-grupo-t .nt-flecha { transform: rotate(-90deg); }
+.nt-asig.plegada .nt-cuerpo, .nt-asig.plegada .nt-pie { display: none; }
+.nt-asig.plegada { min-height: 0; align-self: start; padding-bottom: 16px; }
+.nt-asig.plegada .nt-barra { margin-top: 10px; margin-bottom: 0; }
+.nt-solo-plegada { display: none; }
+.nt-asig.plegada .nt-solo-plegada { display: inline-block; }
+.nt-grupo.plegada .nt-filas { display: none; }
+button.nt-grupo-t { width: 100%; border: 0; background: none; padding: 4px 2px; cursor: pointer; font-family: inherit; align-items: center; }
+.nt-grupo-t > span:first-child { display: inline-flex; align-items: center; gap: 4px; }
+.nt-media-bloque { font-family: var(--f-titulo); letter-spacing: 0; }
+.nt-media-bloque.bien { color: var(--menta-f); } .nt-media-bloque.med { color: var(--limon-f); } .nt-media-bloque.mal { color: var(--rosa-f); }
+.nt-barra-herr { display: flex; justify-content: flex-end; margin: 14px 0 -2px; }
 .nt-asig-cab h3 { margin: 0; font: 700 1.02rem var(--f-titulo); }
 .nt-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
 .nt-resumen { display: flex; flex-direction: column; gap: 2px; }

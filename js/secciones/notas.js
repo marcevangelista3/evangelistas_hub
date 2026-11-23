@@ -28,6 +28,15 @@ function hace(iso) {
 
 let el, subActual = 'notas', sel = null, verOcultas = false;
 
+/* Plegado de asignaturas y bloques (propio de cada dispositivo) */
+const PLEGADO = 'hub-local:notas-plegado';
+const plegado = () => { try { return JSON.parse(localStorage.getItem(PLEGADO)) || {}; } catch { return {}; } };
+function guardarPlegado(clave, valor) {
+  const p = plegado(); if (valor) p[clave] = true; else delete p[clave];
+  try { localStorage.setItem(PLEGADO, JSON.stringify(p)); } catch {}
+}
+const FLECHA = '<svg class="nt-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
 export function render(sub, contenedor) {
   el = contenedor; subActual = sub;
   pintar();
@@ -78,9 +87,23 @@ function notas() {
       ? `<div class="nt-ult"><span class="nt-nota ${tono(justa.c.media)}">${n1(justa.c.media)}</span><div><b>${esc(justa.a.nombre)}</b><br><span class="cifra-sub">${textoNecesito(justa.a, 5)}</span></div></div>`
       : '<p class="cifra-sub">Aún no hay notas para comparar.</p>' }),
   ];
-  el.innerHTML = rejilla(...resumen, ...calc.map(({ a, c }) => asignatura(a, c)))
+  const todoPlegado = lista.every((a) => plegado()[a.id]);
+  el.innerHTML = rejilla(...resumen)
+    + `<div class="nt-barra-herr"><button class="boton-ampliar" data-plegar-todo>${todoPlegado ? 'Desplegar todas' : 'Plegar todas'}</button></div>`
+    + rejilla(...calc.map(({ a, c }) => asignatura(a, c)))
     + `<div class="nt-pie-seccion">${ocultas ? `<button class="boton-ampliar" data-ver-ocultas>${ocultas} ${ocultas === 1 ? 'asignatura oculta' : 'asignaturas ocultas'}</button>` : ''}<button class="boton-ampliar" data-nueva-asig>+ Asignatura a mano</button></div><div id="nt-ocultas"></div>`;
   el.querySelectorAll('[data-asig]').forEach((b) => b.onclick = () => editarAsignatura(todas.find((a) => a.id === b.dataset.asig)));
+  el.querySelectorAll('[data-plegar]').forEach((b) => b.onclick = () => {
+    const caja = b.closest(b.dataset.plegar.includes('|') ? '.nt-grupo' : '.nt-asig');
+    const ahora = !caja.classList.contains('plegada');
+    caja.classList.toggle('plegada', ahora); b.setAttribute('aria-expanded', String(!ahora));
+    guardarPlegado(b.dataset.plegar, ahora);
+  });
+  el.querySelector('[data-plegar-todo]').onclick = () => {
+    const plegar = !lista.every((a) => plegado()[a.id]);
+    lista.forEach((a) => guardarPlegado(a.id, plegar));
+    notas();
+  };
   el.querySelectorAll('[data-item]').forEach((b) => b.onclick = () => {
     const [aid, iid] = b.dataset.item.split('|'); const a = todas.find((x) => x.id === aid);
     editarNota(a.items.find((i) => i.id === iid), a);
@@ -102,15 +125,24 @@ function textoNecesito(a, objetivo) {
   return `Para un ${objetivo}: <b>${n1(Math.max(0, x))}</b> en lo que falta`;
 }
 function asignatura(a, c) {
+  const pl = plegado();
   const grupos = Object.keys(TIPOS_NOTA).map((t) => {
     const del = a.items.filter((i) => i.tipo === t); if (!del.length) return '';
-    const cuenta = del.filter((i) => !i.oculto);
-    return `<div class="nt-grupo"><p class="nt-grupo-t"><span>${TIPOS_NOTA[t]}</span><span>${n0(cuenta.reduce((s, i) => s + (c.p.get(i) || 0), 0))} %</span></p>
-      ${del.map((i) => `<button class="nt-fila${i.oculto ? ' nt-oculta' : ''}" data-item="${a.id}|${i.id}"><span class="nt-nom">${esc(i.nombre)}${esNueva(i) && i.nota != null && !i.oculto && !i.editada ? '<span class="nt-nueva">NUEVA</span>' : ''}${i.editada ? '<span class="nt-nueva nt-editada">EDITADA</span>' : ''}</span><span class="nt-peso">${i.oculto ? 'no cuenta' : `${n0(c.p.get(i))} %`}</span><span class="nt-nota ${tono(i.nota)}">${i.nota == null ? 'Pend.' : n1(i.nota)}</span></button>`).join('')}</div>`;
+    const cuenta = del.filter((i) => !i.oculto), clave = `${a.id}|${t}`, cerrado = !!pl[clave];
+    const conNota = cuenta.filter((i) => i.nota != null), pesoNota = conNota.reduce((s, i) => s + (c.p.get(i) || 0), 0);
+    const mediaBloque = pesoNota ? conNota.reduce((s, i) => s + (c.p.get(i) || 0) * i.nota, 0) / pesoNota : null;
+    return `<div class="nt-grupo${cerrado ? ' plegada' : ''}"><button class="nt-grupo-t" data-plegar="${clave}" aria-expanded="${!cerrado}"><span>${FLECHA}${TIPOS_NOTA[t]}</span><span>${mediaBloque == null ? '' : `<b class="nt-media-bloque ${tono(mediaBloque)}">${n1(mediaBloque)}</b> · `}${n0(cuenta.reduce((s, i) => s + (c.p.get(i) || 0), 0))} %</span></button>
+      <div class="nt-filas">${del.map((i) => `<button class="nt-fila${i.oculto ? ' nt-oculta' : ''}" data-item="${a.id}|${i.id}"><span class="nt-nom">${esc(i.nombre)}${esNueva(i) && i.nota != null && !i.oculto && !i.editada ? '<span class="nt-nueva">NUEVA</span>' : ''}${i.editada ? '<span class="nt-nueva nt-editada">EDITADA</span>' : ''}</span><span class="nt-peso">${i.oculto ? 'no cuenta' : `${n0(c.p.get(i))} %`}</span><span class="nt-nota ${tono(i.nota)}">${i.nota == null ? 'Pend.' : n1(i.nota)}</span></button>`).join('')}</div></div>`;
   }).join('') || '<p class="cifra-sub" style="margin-top:12px">Sin notas todavía.</p>';
-  return `<article class="tarjeta cristal ancho-mitad nt-asig">
-    <button class="nt-asig-cab" data-asig="${a.id}"><h3><span class="nt-dot" style="background:var(--${a.color}-f)"></span>${esc(a.nombre)}</h3><span class="nt-media">${c.media == null ? '—' : n1(c.media)}</span></button>
-    ${grupos}
+  const cerrada = !!pl[a.id];
+  const nuevas = a.items.filter((i) => esNueva(i) && i.nota != null && !i.oculto && !i.editada).length;
+  return `<article class="tarjeta cristal ancho-mitad nt-asig${cerrada ? ' plegada' : ''}">
+    <div class="nt-asig-cab">
+      <button class="nt-asig-plegar" data-plegar="${a.id}" aria-expanded="${!cerrada}">${FLECHA}<h3><span class="nt-dot" style="background:var(--${a.color}-f)"></span>${esc(a.nombre)}</h3>${nuevas ? `<span class="nt-nueva nt-solo-plegada">${nuevas} ${nuevas === 1 ? 'NUEVA' : 'NUEVAS'}</span>` : ''}</button>
+      <span class="nt-media">${c.media == null ? '—' : n1(c.media)}</span>
+      <button class="nt-editar" data-asig="${a.id}" aria-label="Editar asignatura" title="Editar asignatura">⋯</button>
+    </div>
+    <div class="nt-cuerpo">${grupos}</div>
     <div class="nt-barra"><i style="width:${Math.min(100, c.evaluado)}%;background:var(--${a.color}-f)"></i></div>
     <div class="nt-pie"><span>Evaluado <b>${n0(c.evaluado)} %</b></span><span>${textoNecesito(a, 7)}</span></div>
   </article>`;
