@@ -80,7 +80,10 @@ export function asignaturas({ ocultas = false } = {}) {
   };
   const item = (id, base) => {
     const c = aj.items[id] || {};
-    return { ...base, id, original: base.nombre, nombre: c.nombre || base.nombre, tipo: c.tipo || base.tipo || 'actividad', peso: c.peso, oculto: !!c.oculto };
+    // notaManual: nota corregida a mano encima de la de Moodle (null = pendiente)
+    const editada = base.origen === 'moodle' && c.notaManual !== undefined;
+    return { ...base, id, original: base.nombre, nombre: c.nombre || base.nombre, tipo: c.tipo || base.tipo || 'actividad', peso: c.peso, oculto: !!c.oculto,
+      notaMoodle: base.origen === 'moodle' ? base.nota : undefined, nota: editada ? c.notaManual : base.nota, editada };
   };
   if (m?.conectado) for (const n of m.notas || []) {
     const a = asig('m' + n.curso_id, limpiarCurso(n.curso), 'moodle');

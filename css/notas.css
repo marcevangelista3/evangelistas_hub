@@ -13,6 +13,7 @@
 .nt-fila .nt-peso { font-size: .75rem; color: var(--tenue); font-variant-numeric: tabular-nums; }
 .nt-fila.nt-oculta { opacity: .45; } .nt-fila.nt-oculta .nt-nom { text-decoration: line-through; }
 .nt-nueva { font-size: .62rem; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--cielo); color: var(--cielo-f); margin-left: 6px; vertical-align: 2px; }
+.nt-editada { background: var(--limon); color: var(--limon-f); }
 .nt-media { font: 800 1.5rem var(--f-titulo); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .nt-media.grande { font-size: 2.5rem; }
 .nt-barra { height: 6px; border-radius: 9px; background: var(--linea); overflow: hidden; margin: 12px 0 6px; }

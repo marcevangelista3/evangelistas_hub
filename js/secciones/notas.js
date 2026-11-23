@@ -106,7 +106,7 @@ function asignatura(a, c) {
     const del = a.items.filter((i) => i.tipo === t); if (!del.length) return '';
     const cuenta = del.filter((i) => !i.oculto);
     return `<div class="nt-grupo"><p class="nt-grupo-t"><span>${TIPOS_NOTA[t]}</span><span>${n0(cuenta.reduce((s, i) => s + (c.p.get(i) || 0), 0))} %</span></p>
-      ${del.map((i) => `<button class="nt-fila${i.oculto ? ' nt-oculta' : ''}" data-item="${a.id}|${i.id}"><span class="nt-nom">${esc(i.nombre)}${esNueva(i) && i.nota != null && !i.oculto ? '<span class="nt-nueva">NUEVA</span>' : ''}</span><span class="nt-peso">${i.oculto ? 'no cuenta' : `${n0(c.p.get(i))} %`}</span><span class="nt-nota ${tono(i.nota)}">${i.nota == null ? 'Pend.' : n1(i.nota)}</span></button>`).join('')}</div>`;
+      ${del.map((i) => `<button class="nt-fila${i.oculto ? ' nt-oculta' : ''}" data-item="${a.id}|${i.id}"><span class="nt-nom">${esc(i.nombre)}${esNueva(i) && i.nota != null && !i.oculto && !i.editada ? '<span class="nt-nueva">NUEVA</span>' : ''}${i.editada ? '<span class="nt-nueva nt-editada">EDITADA</span>' : ''}</span><span class="nt-peso">${i.oculto ? 'no cuenta' : `${n0(c.p.get(i))} %`}</span><span class="nt-nota ${tono(i.nota)}">${i.nota == null ? 'Pend.' : n1(i.nota)}</span></button>`).join('')}</div>`;
   }).join('') || '<p class="cifra-sub" style="margin-top:12px">Sin notas todavía.</p>';
   return `<article class="tarjeta cristal ancho-mitad nt-asig">
     <button class="nt-asig-cab" data-asig="${a.id}"><h3><span class="nt-dot" style="background:var(--${a.color}-f)"></span>${esc(a.nombre)}</h3><span class="nt-media">${c.media == null ? '—' : n1(c.media)}</span></button>
@@ -251,11 +251,13 @@ function editarNota(item, asig) {
   const actual = asig?.id || (lista.some((a) => a.id === sel) ? sel : lista[0].id);
   const tipo = item?.tipo || 'examen';
   const cuerpo = `<form class="form-evento" data-form>
-    ${manual ? `<section class="grupo"><p class="grupo-titulo">Asignatura</p><select class="campo" name="asig">${lista.map((a) => `<option value="${a.id}" ${a.id === actual ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></section>` : `<p class="nota" style="margin-top:0">${esc(asig.nombre)} · viene de Moodle${item.texto ? ` (${esc(item.texto)})` : ''}</p>`}
+    ${manual ? `<section class="grupo"><p class="grupo-titulo">Asignatura</p><select class="campo" name="asig">${lista.map((a) => `<option value="${a.id}" ${a.id === actual ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></section>` : `<p class="nota" style="margin-top:0">${esc(asig.nombre)} · viene de Moodle</p>`}
     <section class="grupo"><p class="grupo-titulo">Nombre ${!manual && item.nombre !== item.original ? `<small>En Moodle: ${esc(item.original)}</small>` : ''}</p><input class="campo" name="nombre" value="${esc(item?.nombre || '')}" placeholder="Examen 1, Actividad 2…" required maxlength="80"></section>
     <section class="grupo"><p class="grupo-titulo">Cuenta como</p><div class="segmentado" data-tipo>${Object.keys(TIPOS_NOTA).map((t) => `<button type="button" data-valor="${t}" class="${t === tipo ? 'activo' : ''}">${t === 'examen' ? 'Examen' : 'Actividad'}</button>`).join('')}</div></section>
-    ${manual ? `<section class="grupo"><p class="grupo-titulo">Nota <small>sobre 10 · vacío si está pendiente</small></p><input class="campo" name="nota" inputmode="decimal" value="${item?.nota != null ? String(item.nota).replace('.', ',') : ''}" placeholder="7,5"></section>` : ''}
+    <section class="grupo"><p class="grupo-titulo">Nota <small>${!manual ? `En Moodle: ${item.notaMoodle == null ? 'pendiente' : n1(item.notaMoodle)}` : 'sobre 10 · vacío si está pendiente'}</small></p><input class="campo" name="nota" inputmode="decimal" value="${item?.nota != null ? String(item.nota).replace('.', ',') : ''}" placeholder="7,5">
+      ${!manual ? `<p class="nota">${item.editada ? 'La has cambiado a mano: Moodle ya no la sobrescribe.' : 'Si la cambias, se queda la tuya aunque Moodle diga otra cosa.'}</p>` : ''}</section>
     <div class="botones"><button class="boton primario" type="submit">Guardar</button>
+      ${item?.editada ? '<button class="boton" type="button" data-moodle-nota>Volver a la de Moodle</button>' : ''}
       ${!item ? '' : manual ? '<button class="boton peligro" type="button" data-borrar>Borrar</button>' : `<button class="boton" type="button" data-ocultar>${item.oculto ? 'Mostrar' : 'No contar esta nota'}</button>`}</div>
     <p class="nota" data-msg></p>
   </form>`;
@@ -266,15 +268,20 @@ function editarNota(item, asig) {
   form.onsubmit = (e) => {
     e.preventDefault();
     const f = new FormData(form), nombre = String(f.get('nombre')).trim();
+    const t = String(f.get('nota') || '').trim().replace(',', '.');
+    const nota = t === '' ? null : parseFloat(t);
+    if (t !== '' && (isNaN(nota) || nota < 0 || nota > 10)) { dlg.querySelector('[data-msg]').textContent = 'La nota tiene que ir de 0 a 10.'; return; }
     if (manual) {
-      const t = String(f.get('nota') || '').trim().replace(',', '.');
-      const nota = t === '' ? null : parseFloat(t);
-      if (t !== '' && (isNaN(nota) || nota < 0 || nota > 10)) { dlg.querySelector('[data-msg]').textContent = 'La nota tiene que ir de 0 a 10.'; return; }
       guardarNotaManual({ id: item?.id, asig: String(f.get('asig')), tipo: tipoSel, nombre, nota, fecha: item?.publicada });
       if (!item && nota != null) felicitar(nota >= 5 ? `¡Un ${String(nota).replace('.', ',')}!` : 'Apuntada');
-    } else ajusteItem(item.id, { nombre: nombre === item.original ? undefined : nombre, tipo: tipoSel });
+    } else {
+      const cambia = nota !== item.nota;
+      const notaManual = !cambia ? (item.editada ? item.nota : undefined) : nota === item.notaMoodle ? undefined : nota;
+      ajusteItem(item.id, { nombre: nombre === item.original ? undefined : nombre, tipo: tipoSel, notaManual });
+    }
     cerrarYPintar(dlg);
   };
   dlg.querySelector('[data-borrar]')?.addEventListener('click', () => { borrarNotaManual(item.id); cerrarYPintar(dlg); });
+  dlg.querySelector('[data-moodle-nota]')?.addEventListener('click', () => { ajusteItem(item.id, { notaManual: undefined }); cerrarYPintar(dlg); });
   dlg.querySelector('[data-ocultar]')?.addEventListener('click', () => { ajusteItem(item.id, { oculto: !item.oculto }); cerrarYPintar(dlg); });
 }
