@@ -93,6 +93,10 @@ function notas() {
     + rejilla(...calc.map(({ a, c }) => asignatura(a, c)))
     + `<div class="nt-pie-seccion">${ocultas ? `<button class="boton-ampliar" data-ver-ocultas>${ocultas} ${ocultas === 1 ? 'asignatura oculta' : 'asignaturas ocultas'}</button>` : ''}<button class="boton-ampliar" data-nueva-asig>+ Asignatura a mano</button></div><div id="nt-ocultas"></div>`;
   el.querySelectorAll('[data-asig]').forEach((b) => b.onclick = () => editarAsignatura(todas.find((a) => a.id === b.dataset.asig)));
+  el.querySelectorAll('[data-anadir]').forEach((b) => b.onclick = () => {
+    const [aid, t] = b.dataset.anadir.split('|');
+    editarNota(null, todas.find((x) => x.id === aid), t);
+  });
   el.querySelectorAll('[data-plegar]').forEach((b) => b.onclick = () => {
     const caja = b.closest(b.dataset.plegar.includes('|') ? '.nt-grupo' : '.nt-asig');
     const ahora = !caja.classList.contains('plegada');
@@ -134,6 +138,7 @@ function asignatura(a, c) {
     return `<div class="nt-grupo${cerrado ? ' plegada' : ''}"><button class="nt-grupo-t" data-plegar="${clave}" aria-expanded="${!cerrado}"><span>${FLECHA}${TIPOS_NOTA[t]}</span><span>${mediaBloque == null ? '' : `<b class="nt-media-bloque ${tono(mediaBloque)}">${n1(mediaBloque)}</b> · `}${n0(cuenta.reduce((s, i) => s + (c.p.get(i) || 0), 0))} %</span></button>
       <div class="nt-filas">${del.map((i) => `<button class="nt-fila${i.oculto ? ' nt-oculta' : ''}" data-item="${a.id}|${i.id}"><span class="nt-nom">${esc(i.nombre)}${esNueva(i) && i.nota != null && !i.oculto && !i.editada ? '<span class="nt-nueva">NUEVA</span>' : ''}${i.editada ? '<span class="nt-nueva nt-editada">EDITADA</span>' : ''}</span><span class="nt-peso">${i.oculto ? 'no cuenta' : `${n0(c.p.get(i))} %`}</span><span class="nt-nota ${tono(i.nota)}">${i.nota == null ? 'Pend.' : n1(i.nota)}</span></button>`).join('')}</div></div>`;
   }).join('') || '<p class="cifra-sub" style="margin-top:12px">Sin notas todavía.</p>';
+  const anadir = `<div class="nt-anadir">${Object.keys(TIPOS_NOTA).map((t) => `<button class="boton-ampliar" data-anadir="${a.id}|${t}">+ ${t === 'examen' ? 'Examen' : 'Actividad'}</button>`).join('')}</div>`;
   const cerrada = !!pl[a.id];
   const nuevas = a.items.filter((i) => esNueva(i) && i.nota != null && !i.oculto && !i.editada).length;
   return `<article class="tarjeta cristal ancho-mitad nt-asig${cerrada ? ' plegada' : ''}">
@@ -142,7 +147,7 @@ function asignatura(a, c) {
       <span class="nt-media">${c.media == null ? '—' : n1(c.media)}</span>
       <button class="nt-editar" data-asig="${a.id}" aria-label="Editar asignatura" title="Editar asignatura">⋯</button>
     </div>
-    <div class="nt-cuerpo">${grupos}</div>
+    <div class="nt-cuerpo">${grupos}${anadir}</div>
     <div class="nt-barra"><i style="width:${Math.min(100, c.evaluado)}%;background:var(--${a.color}-f)"></i></div>
     <div class="nt-pie"><span>Evaluado <b>${n0(c.evaluado)} %</b></span><span>${textoNecesito(a, 7)}</span></div>
   </article>`;
@@ -276,12 +281,12 @@ function editarAsignatura(a) {
   dlg.querySelector('[data-borrar]')?.addEventListener('click', () => { borrarAsignatura(a.id); cerrarYPintar(dlg); });
 }
 
-function editarNota(item, asig) {
+function editarNota(item, asig, tipoInicial) {
   const lista = asignaturas();
   const manual = !item || item.origen === 'manual';
   if (!item && !lista.length) { editarAsignatura(null); return; }
   const actual = asig?.id || (lista.some((a) => a.id === sel) ? sel : lista[0].id);
-  const tipo = item?.tipo || 'examen';
+  const tipo = item?.tipo || tipoInicial || 'examen';
   const cuerpo = `<form class="form-evento" data-form>
     ${manual ? `<section class="grupo"><p class="grupo-titulo">Asignatura</p><select class="campo" name="asig">${lista.map((a) => `<option value="${a.id}" ${a.id === actual ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></section>` : `<p class="nota" style="margin-top:0">${esc(asig.nombre)} · viene de Moodle</p>`}
     <section class="grupo"><p class="grupo-titulo">Nombre ${!manual && item.nombre !== item.original ? `<small>En Moodle: ${esc(item.original)}</small>` : ''}</p><input class="campo" name="nombre" value="${esc(item?.nombre || '')}" placeholder="Examen 1, Actividad 2…" required maxlength="80"></section>
@@ -293,7 +298,7 @@ function editarNota(item, asig) {
       ${!item ? '' : manual ? '<button class="boton peligro" type="button" data-borrar>Borrar</button>' : `<button class="boton" type="button" data-ocultar>${item.oculto ? 'Mostrar' : 'No contar esta nota'}</button>`}</div>
     <p class="nota" data-msg></p>
   </form>`;
-  const dlg = hoja('panel-nota', item ? 'Nota' : 'Añadir nota', cuerpo);
+  const dlg = hoja('panel-nota', item ? 'Nota' : tipoInicial === 'actividad' ? 'Añadir actividad' : tipoInicial ? 'Añadir examen' : 'Añadir nota', cuerpo);
   const form = dlg.querySelector('[data-form]');
   let tipoSel = tipo;
   dlg.querySelectorAll('[data-tipo] button').forEach((b) => b.onclick = () => { tipoSel = b.dataset.valor; dlg.querySelectorAll('[data-tipo] button').forEach((x) => x.classList.toggle('activo', x === b)); });

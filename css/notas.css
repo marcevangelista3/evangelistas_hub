@@ -36,6 +36,7 @@ button.nt-grupo-t { width: 100%; border: 0; background: none; padding: 4px 2px; 
 .nt-grupo-t > span:first-child { display: inline-flex; align-items: center; gap: 4px; }
 .nt-media-bloque { font-family: var(--f-titulo); letter-spacing: 0; }
 .nt-media-bloque.bien { color: var(--menta-f); } .nt-media-bloque.med { color: var(--limon-f); } .nt-media-bloque.mal { color: var(--rosa-f); }
+.nt-anadir { display: flex; gap: 8px; margin-top: 12px; }
 .nt-barra-herr { display: flex; justify-content: flex-end; margin: 14px 0 -2px; }
 .nt-asig-cab h3 { margin: 0; font: 700 1.02rem var(--f-titulo); }
 .nt-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
